@@ -6,7 +6,7 @@ from typing import Optional, Any, Union
 from sqlalchemy import Column, JSON
 from sqlalchemy.sql.schema import Index
 from sqlmodel import SQLModel, Field
-from pydantic import BaseModel, field_validator, field_serializer
+from pydantic import BaseModel, field_validator, field_serializer, model_validator
 
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_extraction_data import ProductOtherInfo, \
     ProductInfoStrict, BrandDataStrict
@@ -62,6 +62,7 @@ class LabelImage(BaseModel):
     rejected: Optional[bool] = None
     rejected_date: Optional[datetime] = None
 
+    extracted_product_info: Optional[BrandDataStrict] = None
     analysis_result: Optional[LabelImageAnalysisResult] = None
 
 
@@ -94,9 +95,12 @@ class LabelApprovalJob(SQLModel, table=True):
     id: Optional[uuid.UUID] = Field(default=None, primary_key=True)
     brand_name: Optional[str] = Field(nullable=False)
     product_class: Optional[str] = Field(nullable=False)
-    status: str = Field(default=LabelApprovalStatus.pending.value, nullable=False)
-    job_metadata: dict[str, Any] = Field(sa_column=Column("metadata", JSON, nullable=False),
-                                         default_factory=lambda: JobMetadata().model_dump(exclude_none=False))
+    status: LabelApprovalStatus = Field(default=LabelApprovalStatus.pending, nullable=False)
+    _job_metadata: Union[dict, JobMetadata] = Field(
+        sa_column=Column("metadata", JSON, nullable=False),
+        default_factory=lambda: JobMetadata(),
+        alias="job_metadata"
+    )
     created_at: datetime = Field(nullable=False)
     updated_at: datetime = Field(nullable=False)
     created_by_entity: str = Field(nullable=False)
@@ -106,15 +110,30 @@ class LabelApprovalJob(SQLModel, table=True):
     updated_by_entity_id: Optional[str] = Field(default=None, nullable=True)
     updated_by_entity_domain: Optional[str] = Field(default=None, nullable=True)
 
-    @field_validator('job_metadata', mode='before')
+    @property
+    def job_metadata(self) -> JobMetadata:
+        """Get job_metadata as JobMetadata object, deserializing from dict if needed"""
+        if isinstance(self._job_metadata, dict):
+            self._job_metadata = JobMetadata(**self._job_metadata)
+        return self._job_metadata
+
+    @job_metadata.setter
+    def job_metadata(self, value: Union[dict, JobMetadata]) -> None:
+        """Set job_metadata, accepting either dict or JobMetadata object"""
+        if isinstance(value, dict):
+            self._job_metadata = JobMetadata(**value)
+        else:
+            self._job_metadata = value
+
+    @field_validator('_job_metadata', mode='before')
     @classmethod
-    def validate_job_metadata(cls, v: Union[dict, JobMetadata]) -> dict[str, Any]:
-        """Convert JobMetadata to dict before assignment"""
-        if isinstance(v, JobMetadata):
-            return v.model_dump(exclude_none=False)
+    def validate_job_metadata(cls, v: Union[dict, JobMetadata]) -> Union[dict, JobMetadata]:
+        """Convert dict to JobMetadata before assignment"""
+        if isinstance(v, dict):
+            return JobMetadata(**v)
         return v
 
-    @field_serializer('job_metadata')
+    @field_serializer('_job_metadata')
     def serialize_job_metadata(self, v: Union[dict, JobMetadata], _info) -> dict[str, Any]:
         """Serialize job_metadata to dict"""
         if isinstance(v, JobMetadata):
@@ -123,4 +142,4 @@ class LabelApprovalJob(SQLModel, table=True):
 
     def get_job_metadata(self) -> JobMetadata:
         """Get job metadata as JobMetadata object"""
-        return JobMetadata.model_validate(self.job_metadata)
+        return self.job_metadata

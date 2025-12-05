@@ -5,7 +5,7 @@ import base64
 from pathlib import Path
 
 from treasury.services.gateways.ttb_api.main.application.config import config
-from treasury.services.gateways.ttb_api.main.application.usecases.label_data_extraction_service import (
+from treasury.services.gateways.ttb_api.main.application.usecases.label_data_extraction import (
     LabelDataExtractionService
 )
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_extraction_data import (

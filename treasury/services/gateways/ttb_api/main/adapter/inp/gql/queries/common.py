@@ -1,4 +1,4 @@
-from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service import \
+from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs import \
     LabelApprovalJobsService
 
 

@@ -23,7 +23,7 @@ class ProductInfoStrict(BaseModel):
     # Matches “700 mL”, “70 cL”, “12 fl oz”
     net_contents: Optional[str] = Field(
         default=None,
-        pattern=r"^\d+(\.\d+)?\s?(mL|cL|fl oz)$",
+        pattern=r"^\d+(\.\d+)?\s?(mL|ml|cL|cl|fl oz|fL oz)$",
         description="Net contents with unit, e.g. '700 mL'"
     )
 
@@ -38,18 +38,18 @@ class ProductInfoStrict(BaseModel):
 
     def net_contents_as_millilitres(self) -> float:
         """Convert net contents to millilitres"""
-        match = re.match(r"^(\d+(\.\d+)?)\s?(mL|cL|fl oz)$", self.net_contents)
+        match = re.match(r"^(\d+(\.\d+)?)\s?(mL|ml|cL|cl|fl oz|fL oz)$", self.net_contents)
         if not match:
             raise ValueError(f"Invalid net contents format: {self.net_contents}")
 
         quantity = float(match.group(1))
         unit = match.group(3)
 
-        if unit == "mL":
+        if unit.lower() == "mL":
             return quantity
-        elif unit == "cL":
+        elif unit.lower() == "cL":
             return quantity * 10
-        elif unit == "fl oz":
+        elif unit.lower() == "fl oz":
             return quantity * 29.5735  # 1 fl oz = 29.5735 mL
         else:
             raise ValueError(f"Unknown unit: {unit}")

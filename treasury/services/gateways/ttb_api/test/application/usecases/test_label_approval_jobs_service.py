@@ -9,6 +9,11 @@ from treasury.services.gateways.ttb_api.main.application.models.domain.label_app
     JobMetadata,
     LabelImage
 )
+from treasury.services.gateways.ttb_api.main.application.models.domain.label_extraction_data import (
+    BrandDataStrict,
+    ProductInfoStrict,
+    ProductOtherInfo
+)
 from treasury.services.gateways.ttb_api.main.application.models.domain.user import User
 from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.create_label_approval_job_request import (
     CreateLabelApprovalJobInput,
@@ -25,7 +30,7 @@ from treasury.services.gateways.ttb_api.main.application.models.gql.label_approv
     ListLabelApprovalJobsInput,
     ListLabelApprovalJobsResponse
 )
-from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service import \
+from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs import \
     LabelApprovalJobsService
 
 
@@ -168,7 +173,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         """Set up test fixtures"""
         self.test_org_id = uuid.uuid4()
         self.test_user_id = uuid.uuid4()
-        self.test_brand_name = uuid.uuid4()
+        self.test_brand_name = "Test Brand"
 
         # Create mock dependencies
         self.mock_persistence_adapter = Mock()
@@ -212,15 +217,12 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
     def _create_test_input(self, **overrides) -> CreateLabelApprovalJobInput:
         """Helper to create test input with sensible defaults"""
         defaults = {
-            'brand_name': self.test_brand_name,
-            'product_class': 'beer',
             'status': 'pending',
             'job_metadata': JobMetadataInput(
-                alcohol_content_percentage='5%',
-                net_contents_in_milli_litres='355',
-                bottler_info='Test Bottlers',
-                manufacturer='Test Brewery',
-                warnings='Contains alcohol',
+                brand_name=self.test_brand_name,
+                product_class='beer',
+                alcohol_content_abv='5%',
+                net_contents='355',
                 label_image_base64='data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
             )
         }
@@ -229,15 +231,29 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
 
     def _create_mock_created_job(self) -> LabelApprovalJob:
         """Helper to create a mock created job"""
+        # Create product info with all the details
+        product_other_info = ProductOtherInfo(
+            bottler_info='Test Bottlers',
+            manufacturer='Test Brewery',
+            warnings='Contains alcohol'
+        )
+        product_info_strict = ProductInfoStrict(
+            name='Test Beer',
+            product_class_type='beer',
+            alcohol_content_abv='5%',
+            net_contents='355 mL',
+            other_info=product_other_info
+        )
+        brand_data_strict = BrandDataStrict(
+            brand_name=str(self.test_brand_name),
+            products=[product_info_strict]
+        )
+
         job_metadata = JobMetadata(
             reviewer_id=str(self.test_user_id),
             reviewer_name="Test User",
             review_comments=["Review initiated"],
-            alcohol_content_percentage='5%',
-            net_contents_in_milli_litres='355',
-            bottler_info='Test Bottlers',
-            manufacturer='Test Brewery',
-            warnings='Contains alcohol'
+            product_info=brand_data_strict
         )
 
         job = LabelApprovalJob(
@@ -257,7 +273,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         )
         return job
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_create_label_approval_job_success(self, mock_security_context):
         """Test successful creation of label approval job"""
         # Setup mocks
@@ -303,7 +319,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         self.assertEqual(created_job_arg.brand_name, self.test_brand_name)
         self.assertEqual(created_job_arg.product_class, 'beer')
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_create_label_approval_job_user_not_found(self, mock_security_context):
         """Test creation fails when authenticated user is not found"""
         # Setup mocks
@@ -337,7 +353,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         # Verify persistence adapter was NOT called
         self.mock_persistence_adapter.create_approval_job.assert_not_called()
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_create_label_approval_job_invalid_alcohol_content(self, mock_security_context):
         """Test creation fails with invalid alcohol content percentage"""
         # Setup mocks
@@ -346,8 +362,10 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
 
         # Create input with invalid alcohol content
         job_metadata_input = JobMetadataInput(
-            alcohol_content_percentage='150%',  # Invalid - over 100%
-            net_contents_in_milli_litres='355',
+            brand_name=self.test_brand_name,
+            product_class='beer',
+            alcohol_content_abv='150%',  # Invalid - over 100%
+            net_contents='355',
             label_image_base64='data:image/jpg;base64,test'
         )
         test_input = self._create_test_input(job_metadata=job_metadata_input)
@@ -378,7 +396,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         # Verify persistence adapter was NOT called
         self.mock_persistence_adapter.create_approval_job.assert_not_called()
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_create_label_approval_job_invalid_net_contents(self, mock_security_context):
         """Test creation fails with invalid net contents"""
         # Setup mocks
@@ -387,8 +405,10 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
 
         # Create input with invalid net contents
         job_metadata_input = JobMetadataInput(
-            alcohol_content_percentage='5%',
-            net_contents_in_milli_litres='invalid',  # Invalid - not a number
+            brand_name=self.test_brand_name,
+            product_class='beer',
+            alcohol_content_abv='5%',
+            net_contents='invalid',  # Invalid - not a number
             label_image_base64='data:image/jpg;base64,test'
         )
         test_input = self._create_test_input(job_metadata=job_metadata_input)
@@ -419,7 +439,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         # Verify persistence adapter was NOT called
         self.mock_persistence_adapter.create_approval_job.assert_not_called()
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_create_label_approval_job_invalid_label_image(self, mock_security_context):
         """Test creation fails with invalid label image"""
         # Setup mocks
@@ -428,8 +448,10 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
 
         # Create input with invalid label image
         job_metadata_input = JobMetadataInput(
-            alcohol_content_percentage='5%',
-            net_contents_in_milli_litres='355',
+            brand_name=self.test_brand_name,
+            product_class='beer',
+            alcohol_content_abv='5%',
+            net_contents='355',
             label_image_base64='data:image/bmp;base64,test'  # Invalid - not jpg/png/gif
         )
         test_input = self._create_test_input(job_metadata=job_metadata_input)
@@ -454,13 +476,13 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
 
         # Verify
         self.assertFalse(response.success)
-        self.assertIn("Invalid net contents in milli litres", response.message)  # Note: bug in original code
+        self.assertIn("Invalid label image", response.message)
         self.assertIsNone(response.job)
 
         # Verify persistence adapter was NOT called
         self.mock_persistence_adapter.create_approval_job.assert_not_called()
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_create_label_approval_job_persistence_failure(self, mock_security_context):
         """Test creation fails when persistence adapter returns None"""
         # Setup mocks
@@ -494,7 +516,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         self.assertIn("Failed to create label approval job", response.message)
         self.assertIsNone(response.job)
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_create_label_approval_job_exception_handling(self, mock_security_context):
         """Test that exceptions are properly caught and handled"""
         # Setup mocks
@@ -526,7 +548,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         self.assertIn("Database connection error", response.message)
         self.assertIsNone(response.job)
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_create_label_approval_job_with_optional_fields(self, mock_security_context):
         """Test creation with optional fields in metadata"""
         # Setup mocks
@@ -535,10 +557,11 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
 
         # Create input with minimal metadata
         job_metadata_input = JobMetadataInput(
-            alcohol_content_percentage='5%',
-            net_contents_in_milli_litres='355',
+            brand_name=self.test_brand_name,
+            product_class='beer',
+            alcohol_content_abv='5%',
+            net_contents='355',
             label_image_base64='data:image/png;base64,test'
-            # bottler_info, manufacturer, warnings are optional
         )
         test_input = self._create_test_input(job_metadata=job_metadata_input)
 
@@ -686,7 +709,7 @@ class TestLabelApprovalJobsServiceSetStatus(unittest.TestCase):
         )
         return job
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_set_label_approval_job_status_success(self, mock_security_context):
         """Test successfully setting job status"""
         # Setup mocks
@@ -743,7 +766,7 @@ class TestLabelApprovalJobsServiceSetStatus(unittest.TestCase):
         self.mock_persistence_adapter.set_job_status.assert_called_once()
         self.mock_persistence_adapter.set_job_metadata.assert_called_once()
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_set_label_approval_job_status_job_not_found(self, mock_security_context):
         """Test setting status when job doesn't exist"""
         # Setup mocks
@@ -780,7 +803,7 @@ class TestLabelApprovalJobsServiceSetStatus(unittest.TestCase):
         self.assertIn("not found", response.message)
         self.assertIsNone(response.job)
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_set_label_approval_job_status_without_comment(self, mock_security_context):
         """Test setting status without review comment"""
         # Setup mocks
@@ -900,7 +923,7 @@ class TestLabelApprovalJobsServiceAddComment(unittest.TestCase):
         )
         return job
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_add_review_comment_success(self, mock_security_context):
         """Test successfully adding a review comment"""
         # Setup mocks
@@ -953,7 +976,7 @@ class TestLabelApprovalJobsServiceAddComment(unittest.TestCase):
         self.mock_persistence_adapter.get_approval_job_by_id.assert_called_once_with(event_id=self.test_job_id)
         self.mock_persistence_adapter.set_job_metadata.assert_called_once()
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_add_review_comment_job_not_found(self, mock_security_context):
         """Test adding comment when job doesn't exist"""
         # Setup mocks
@@ -990,7 +1013,7 @@ class TestLabelApprovalJobsServiceAddComment(unittest.TestCase):
         self.assertIn("not found", response.message)
         self.assertIsNone(response.job)
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_add_review_comment_with_empty_comments_list(self, mock_security_context):
         """Test adding comment when review_comments is initially None"""
         # Setup mocks
@@ -1107,7 +1130,7 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
             jobs.append(job)
         return jobs
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_list_label_approval_jobs_success(self, mock_security_context):
         """Test successfully listing label approval jobs"""
         # Setup mocks
@@ -1152,7 +1175,7 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
             limit=100
         )
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_list_label_approval_jobs_with_brand_filter(self, mock_security_context):
         """Test listing jobs with brand_name_like filter"""
         # Setup mocks
@@ -1193,7 +1216,7 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
             limit=100
         )
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_list_label_approval_jobs_with_status_filter(self, mock_security_context):
         """Test listing jobs with status filter"""
         # Setup mocks
@@ -1234,7 +1257,7 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
             limit=100
         )
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_list_label_approval_jobs_with_pagination(self, mock_security_context):
         """Test listing jobs with pagination parameters"""
         # Setup mocks
@@ -1277,7 +1300,7 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
             limit=20
         )
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_list_label_approval_jobs_empty_result(self, mock_security_context):
         """Test listing jobs when no jobs match the criteria"""
         # Setup mocks
@@ -1310,7 +1333,7 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
         self.assertEqual(response.total_count, 0)
         self.assertIn("Found 0 jobs", response.message)
 
-    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service.SecurityContext')
+    @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
     def test_list_label_approval_jobs_exception_handling(self, mock_security_context):
         """Test that exceptions are properly caught and handled"""
         # Setup mocks

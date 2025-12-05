@@ -7,7 +7,8 @@ from treasury.services.gateways.ttb_api.main.adapter.out.persistence.common.db_c
 from treasury.services.gateways.ttb_api.main.adapter.out.persistence.label_approvals_persistence_adapter import \
     LabelApprovalJobsPersistenceAdapter
 from treasury.services.gateways.ttb_api.main.application.models.domain.entity_descriptor import EntityDescriptor
-from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import LabelApprovalJob, JobMetadata
+from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import LabelApprovalJob, \
+    JobMetadata, LabelApprovalStatus
 
 
 class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
@@ -35,7 +36,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
             id=job_id,
             brand_name=brand_name,
             product_class="beer",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata
         )
 
@@ -45,7 +46,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertEqual(result.id, job_id)
         self.assertEqual(result.brand_name, brand_name)
         self.assertEqual(result.product_class, "beer")
-        self.assertEqual(result.status, "pending")
+        self.assertEqual(result.status, LabelApprovalStatus.pending)
         metadata_obj = result.get_job_metadata()
         self.assertIsInstance(metadata_obj, JobMetadata)
         self.assertEqual(metadata_obj.reviewer_id, "test_reviewer")
@@ -68,7 +69,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="wine",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata
         )
 
@@ -78,7 +79,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertIsNotNone(result.id)
         self.assertEqual(result.brand_name, brand_name)
         self.assertEqual(result.product_class, "wine")
-        self.assertEqual(result.status, "pending")
+        self.assertEqual(result.status, LabelApprovalStatus.pending)
         metadata_obj = result.get_job_metadata()
         self.assertIsInstance(metadata_obj, JobMetadata)
         self.assertEqual(metadata_obj.reviewer_id, "test_reviewer")
@@ -93,7 +94,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="spirits",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata
         )
 
@@ -115,7 +116,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="beer",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata
         )
 
@@ -128,7 +129,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertEqual(retrieved_job.id, created_job.id)
         self.assertEqual(retrieved_job.brand_name, brand_name)
         self.assertEqual(retrieved_job.product_class, "beer")
-        self.assertEqual(retrieved_job.status, "pending")
+        self.assertEqual(retrieved_job.status, LabelApprovalStatus.pending)
         metadata_obj = retrieved_job.get_job_metadata()
         self.assertIsInstance(metadata_obj, JobMetadata)
         self.assertEqual(metadata_obj.reviewer_id, "test_reviewer")
@@ -150,7 +151,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job1 = LabelApprovalJob(
             brand_name=str(uuid.uuid4()),
             product_class="beer",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata1
         )
 
@@ -158,7 +159,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job2 = LabelApprovalJob(
             brand_name=str(uuid.uuid4()),
             product_class="wine",
-            status="approved",
+            status=LabelApprovalStatus.approved,
             job_metadata=metadata2
         )
 
@@ -170,8 +171,8 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertNotEqual(result1.id, result2.id)
         self.assertEqual(result1.product_class, "beer")
         self.assertEqual(result2.product_class, "wine")
-        self.assertEqual(result1.status, "pending")
-        self.assertEqual(result2.status, "approved")
+        self.assertEqual(result1.status, LabelApprovalStatus.pending)
+        self.assertEqual(result2.status, LabelApprovalStatus.approved)
         metadata_obj1 = result1.get_job_metadata()
         metadata_obj2 = result2.get_job_metadata()
         self.assertIsInstance(metadata_obj1, JobMetadata)
@@ -187,7 +188,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job1 = LabelApprovalJob(
             brand_name=brand_name,
             product_class="spirits",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata1
         )
         result1 = self.adapter.create_approval_job(job=job1, created_by=org_entity)
@@ -201,7 +202,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job2 = LabelApprovalJob(
             brand_name=brand_name,
             product_class="wine",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata2
         )
         result2 = self.adapter.create_approval_job(job=job2, created_by=tools_entity)
@@ -217,13 +218,13 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         metadata = JobMetadata(
             reviewer_id="reviewer_123",
             reviewer_name="John Doe",
-            review_comments=["Looks good", "Approved"]
+            review_comments=["Looks good", LabelApprovalStatus.approved]
         )
 
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="spirits",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata
         )
 
@@ -234,7 +235,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertIsInstance(metadata_obj, JobMetadata)
         self.assertEqual(metadata_obj.reviewer_id, "reviewer_123")
         self.assertEqual(metadata_obj.reviewer_name, "John Doe")
-        self.assertEqual(metadata_obj.review_comments, ["Looks good", "Approved"])
+        self.assertEqual(metadata_obj.review_comments, ["Looks good", LabelApprovalStatus.approved])
 
         # Verify by retrieving the job
         retrieved = self.adapter.get_approval_job_by_id(event_id=result.id)
@@ -242,7 +243,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertIsInstance(retrieved_metadata, JobMetadata)
         self.assertEqual(retrieved_metadata.reviewer_id, "reviewer_123")
         self.assertEqual(retrieved_metadata.reviewer_name, "John Doe")
-        self.assertEqual(retrieved_metadata.review_comments, ["Looks good", "Approved"])
+        self.assertEqual(retrieved_metadata.review_comments, ["Looks good", LabelApprovalStatus.approved])
 
     def test_set_job_status_success(self):
         """Test updating job status successfully"""
@@ -254,25 +255,25 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="beer",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata
         )
 
         created_job = self.adapter.create_approval_job(job=job, created_by=created_by)
         self.assertIsNotNone(created_job)
-        self.assertEqual(created_job.status, "pending")
+        self.assertEqual(created_job.status, LabelApprovalStatus.pending)
 
         # Update status
         updated_by = EntityDescriptor.of_user(id=str(uuid.uuid4()), org_id=self.test_org_id)
         updated_job = self.adapter.set_job_status(
             job_id=created_job.id,
-            status="approved",
+            status=LabelApprovalStatus.approved,
             updated_by=updated_by
         )
 
         # Verify status was updated
         self.assertIsNotNone(updated_job)
-        self.assertEqual(updated_job.status, "approved")
+        self.assertEqual(updated_job.status, LabelApprovalStatus.approved)
         self.assertEqual(updated_job.id, created_job.id)
         self.assertEqual(updated_job.brand_name, brand_name)
 
@@ -295,7 +296,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
 
         result = self.adapter.set_job_status(
             job_id=non_existent_id,
-            status="approved",
+            status=LabelApprovalStatus.approved,
             updated_by=updated_by
         )
 
@@ -311,31 +312,31 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="wine",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=metadata
         )
 
         created_job = self.adapter.create_approval_job(job=job, created_by=created_by)
-        self.assertEqual(created_job.status, "pending")
+        self.assertEqual(created_job.status, LabelApprovalStatus.pending)
 
         # First update
         updated_by1 = EntityDescriptor.of_system()
         updated_job1 = self.adapter.set_job_status(
             job_id=created_job.id,
-            status="approved",
+            status=LabelApprovalStatus.approved,
             updated_by=updated_by1
         )
-        self.assertEqual(updated_job1.status, "approved")
+        self.assertEqual(updated_job1.status, LabelApprovalStatus.approved)
         self.assertEqual(updated_job1.updated_by_entity, "system")
 
         # Second update
         updated_by2 = EntityDescriptor.of_user(id=str(uuid.uuid4()), org_id=self.test_org_id)
         updated_job2 = self.adapter.set_job_status(
             job_id=created_job.id,
-            status="rejected",
+            status=LabelApprovalStatus.rejected,
             updated_by=updated_by2
         )
-        self.assertEqual(updated_job2.status, "rejected")
+        self.assertEqual(updated_job2.status, LabelApprovalStatus.rejected)
         self.assertEqual(updated_job2.updated_by_entity, "user")
         self.assertEqual(updated_job2.updated_by_entity_id, updated_by2.id)
 
@@ -349,7 +350,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="spirits",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=initial_metadata
         )
 
@@ -389,7 +390,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertNotEqual(updated_job.updated_at, updated_job.created_at)
 
         # Verify other fields remain unchanged
-        self.assertEqual(updated_job.status, "pending")
+        self.assertEqual(updated_job.status, LabelApprovalStatus.pending)
         self.assertEqual(updated_job.brand_name, brand_name)
 
     def test_set_job_metadata_not_found(self):
@@ -420,7 +421,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="spirits",
-            status="pending",
+            status=LabelApprovalStatus.pending,
             job_metadata=initial_metadata
         )
 
@@ -450,9 +451,9 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
 
         # Create multiple jobs
         metadata = JobMetadata()
-        job1 = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status="pending", job_metadata=metadata)
-        job2 = LabelApprovalJob(brand_name="Corona", product_class="beer", status="approved", job_metadata=metadata)
-        job3 = LabelApprovalJob(brand_name="Heineken", product_class="beer", status="rejected", job_metadata=metadata)
+        job1 = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
+        job2 = LabelApprovalJob(brand_name="Corona", product_class="beer", status=LabelApprovalStatus.approved, job_metadata=metadata)
+        job3 = LabelApprovalJob(brand_name="Heineken", product_class="beer", status=LabelApprovalStatus.rejected, job_metadata=metadata)
 
         self.adapter.create_approval_job(job=job1, created_by=created_by)
         self.adapter.create_approval_job(job=job2, created_by=created_by)
@@ -470,9 +471,9 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
 
         # Create jobs with different brand names
         metadata = JobMetadata()
-        job1 = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status="pending", job_metadata=metadata)
-        job2 = LabelApprovalJob(brand_name="Bud Light", product_class="beer", status="approved", job_metadata=metadata)
-        job3 = LabelApprovalJob(brand_name="Corona", product_class="beer", status="pending", job_metadata=metadata)
+        job1 = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
+        job2 = LabelApprovalJob(brand_name="Bud Light", product_class="beer", status=LabelApprovalStatus.approved, job_metadata=metadata)
+        job3 = LabelApprovalJob(brand_name="Corona", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
 
         self.adapter.create_approval_job(job=job1, created_by=created_by)
         self.adapter.create_approval_job(job=job2, created_by=created_by)
@@ -494,21 +495,21 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
 
         # Create jobs with different statuses
         metadata = JobMetadata()
-        job1 = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status="pending", job_metadata=metadata)
-        job2 = LabelApprovalJob(brand_name="Corona", product_class="beer", status="approved", job_metadata=metadata)
-        job3 = LabelApprovalJob(brand_name="Heineken", product_class="beer", status="pending", job_metadata=metadata)
+        job1 = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
+        job2 = LabelApprovalJob(brand_name="Corona", product_class="beer", status=LabelApprovalStatus.approved, job_metadata=metadata)
+        job3 = LabelApprovalJob(brand_name="Heineken", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
 
         self.adapter.create_approval_job(job=job1, created_by=created_by)
         self.adapter.create_approval_job(job=job2, created_by=created_by)
         self.adapter.create_approval_job(job=job3, created_by=created_by)
 
         # List only pending jobs
-        jobs, total_count = self.adapter.list_approval_jobs(status="pending")
+        jobs, total_count = self.adapter.list_approval_jobs(status=LabelApprovalStatus.pending)
 
         self.assertEqual(len(jobs), 2)
         self.assertEqual(total_count, 2)
         for job in jobs:
-            self.assertEqual(job.status, "pending")
+            self.assertEqual(job.status, LabelApprovalStatus.pending)
 
     def test_list_approval_jobs_with_both_filters(self):
         """Test listing jobs with both brand_name_like and status filters"""
@@ -516,10 +517,10 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
 
         # Create jobs with different combinations
         metadata = JobMetadata()
-        job1 = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status="pending", job_metadata=metadata)
-        job2 = LabelApprovalJob(brand_name="Bud Light", product_class="beer", status="approved", job_metadata=metadata)
-        job3 = LabelApprovalJob(brand_name="Corona", product_class="beer", status="pending", job_metadata=metadata)
-        job4 = LabelApprovalJob(brand_name="Bud Ice", product_class="beer", status="pending", job_metadata=metadata)
+        job1 = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
+        job2 = LabelApprovalJob(brand_name="Bud Light", product_class="beer", status=LabelApprovalStatus.approved, job_metadata=metadata)
+        job3 = LabelApprovalJob(brand_name="Corona", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
+        job4 = LabelApprovalJob(brand_name="Bud Ice", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
 
         self.adapter.create_approval_job(job=job1, created_by=created_by)
         self.adapter.create_approval_job(job=job2, created_by=created_by)
@@ -527,12 +528,12 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.adapter.create_approval_job(job=job4, created_by=created_by)
 
         # List pending jobs with brand name containing "Bud"
-        jobs, total_count = self.adapter.list_approval_jobs(brand_name_like="Bud", status="pending")
+        jobs, total_count = self.adapter.list_approval_jobs(brand_name_like="Bud", status=LabelApprovalStatus.pending)
 
         self.assertEqual(len(jobs), 2)
         self.assertEqual(total_count, 2)
         for job in jobs:
-            self.assertEqual(job.status, "pending")
+            self.assertEqual(job.status, LabelApprovalStatus.pending)
             self.assertIn("Bud", job.brand_name)
 
     def test_list_approval_jobs_with_pagination(self):
@@ -545,7 +546,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
             job = LabelApprovalJob(
                 brand_name=f"Brand_{i}",
                 product_class="beer",
-                status="pending",
+                status=LabelApprovalStatus.pending,
                 job_metadata=metadata
             )
             self.adapter.create_approval_job(job=job, created_by=created_by)
@@ -579,7 +580,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
 
         # Create jobs with specific characteristics
         metadata = JobMetadata()
-        job = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status="pending", job_metadata=metadata)
+        job = LabelApprovalJob(brand_name="Budweiser", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
         self.adapter.create_approval_job(job=job, created_by=created_by)
 
         # Search for non-existent brand
@@ -601,9 +602,9 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
 
         # Create jobs in sequence
         metadata = JobMetadata()
-        job1 = LabelApprovalJob(brand_name="First", product_class="beer", status="pending", job_metadata=metadata)
-        job2 = LabelApprovalJob(brand_name="Second", product_class="beer", status="pending", job_metadata=metadata)
-        job3 = LabelApprovalJob(brand_name="Third", product_class="beer", status="pending", job_metadata=metadata)
+        job1 = LabelApprovalJob(brand_name="First", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
+        job2 = LabelApprovalJob(brand_name="Second", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
+        job3 = LabelApprovalJob(brand_name="Third", product_class="beer", status=LabelApprovalStatus.pending, job_metadata=metadata)
 
         created1 = self.adapter.create_approval_job(job=job1, created_by=created_by)
         created2 = self.adapter.create_approval_job(job=job2, created_by=created_by)

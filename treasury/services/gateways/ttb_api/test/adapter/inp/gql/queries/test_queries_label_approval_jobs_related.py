@@ -8,7 +8,7 @@ from treasury.services.gateways.ttb_api.main.application.models.dto.label_approv
 from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.list_label_approval_jobs_request import (
     ListLabelApprovalJobsResponse
 )
-from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service import \
+from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs import \
     LabelApprovalJobsService
 from treasury.services.gateways.ttb_api.test.testing.base_api_service_test_case import BaseApiServiceTestCase
 

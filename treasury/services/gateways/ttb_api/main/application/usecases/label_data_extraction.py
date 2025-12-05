@@ -8,9 +8,10 @@ from treasury.services.gateways.ttb_api.main.application.usecases.llm_prompts im
 
 
 class LabelDataExtractionService:
+    _logger = GlobalConfig.get_logger(__name__)
+
     def __init__(self, llm_client: OpenAiAdapter = None) -> None:
         self._llm_client_lazy = llm_client
-        self._logger = GlobalConfig.get_logger(__name__)
 
     @property
     def _llm_client(self) -> OpenAiAdapter:
@@ -26,22 +27,20 @@ class LabelDataExtractionService:
         self._logger.info(f"extract_label_data - LLM Results for base64_image: {llm_results}")
 
         # Parse JSON from LLM response (may include markdown code blocks)
-        json_data = self._extract_json_from_response(llm_results)
+        json_data = self.extract_json_from_response(llm_results)
 
         # Validate and parse into Pydantic model
         results = BrandDataStrict.model_validate(json_data)
         return results
 
-    def _extract_json_from_response(self, response: str) -> dict:
+    @classmethod
+    def extract_json_from_response(cls, response: str) -> dict:
         """
         Extract JSON from LLM response, handling markdown code blocks
-
         Args:
             response: Raw LLM response string
-
         Returns:
             Parsed JSON as dictionary
-
         Raises:
             ValueError: If JSON cannot be extracted or parsed
         """
@@ -61,7 +60,7 @@ class LabelDataExtractionService:
         try:
             return json.loads(json_str)
         except json.JSONDecodeError as e:
-            self._logger.error(f"Failed to parse JSON from LLM response: {str(e)}")
-            self._logger.error(f"Response: {response}")
+            cls._logger.error(f"Failed to parse JSON from LLM response: {str(e)}")
+            cls._logger.error(f"Response: {response}")
             raise ValueError(f"Could not parse JSON from LLM response: {str(e)}")
 

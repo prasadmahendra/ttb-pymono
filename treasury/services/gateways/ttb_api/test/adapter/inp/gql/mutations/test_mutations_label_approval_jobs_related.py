@@ -15,7 +15,7 @@ from treasury.services.gateways.ttb_api.main.application.models.gql.label_approv
     SetLabelApprovalJobStatusResponse,
     AddReviewCommentResponse
 )
-from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs_service import \
+from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs import \
     LabelApprovalJobsService
 from treasury.services.gateways.ttb_api.test.testing.base_api_service_test_case import BaseApiServiceTestCase
 
@@ -99,13 +99,13 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
 
         variables = {
             "input": {
-                "brandName": str(self._test_brand_name),
-                "productClass": "spirits",
                 "status": "pending",
                 "jobMetadata": {
-                    "reviewerId": "reviewer_123",
-                    "reviewerName": "John Doe",
-                    "reviewComments": ["Looks good", "Approved"]
+                    "brandName": str(self._test_brand_name),
+                    "productClass": "spirits",
+                    "alcoholContentAbv": "40%",
+                    "netContents": "750",
+                    "labelImageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
                 }
             }
         }
@@ -192,11 +192,13 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
 
         variables = {
             "input": {
-                "brandName": str(self._test_brand_name),
-                "productClass": "beer",
                 "status": "pending",
                 "jobMetadata": {
-                    "reviewerId": "reviewer_456"
+                    "brandName": str(self._test_brand_name),
+                    "productClass": "beer",
+                    "alcoholContentAbv": "5%",
+                    "netContents": "355",
+                    "labelImageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
                 }
             }
         }
@@ -273,9 +275,14 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
 
         variables = {
             "input": {
-                "brandName": str(self._test_brand_name),
-                "productClass": "wine",
-                "status": "pending"
+                "status": "pending",
+                "jobMetadata": {
+                    "brandName": str(self._test_brand_name),
+                    "productClass": "wine",
+                    "alcoholContentAbv": "12%",
+                    "netContents": "750",
+                    "labelImageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                }
             }
         }
 
@@ -325,9 +332,14 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
 
         variables = {
             "input": {
-                "brandName": str(self._test_brand_name),
-                "productClass": "spirits",
-                "status": "pending"
+                "status": "pending",
+                "jobMetadata": {
+                    "brandName": str(self._test_brand_name),
+                    "productClass": "spirits",
+                    "alcoholContentAbv": "40%",
+                    "netContents": "750",
+                    "labelImageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                }
             }
         }
 
@@ -399,11 +411,13 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
 
                 variables = {
                     "input": {
-                        "brandName": str(self._test_brand_name),
-                        "productClass": product_class,
                         "status": "pending",
                         "jobMetadata": {
-                            "reviewerId": "reviewer_123"
+                            "brandName": str(self._test_brand_name),
+                            "productClass": product_class,
+                            "alcoholContentAbv": "5%",
+                            "netContents": "355",
+                            "labelImageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
                         }
                     }
                 }
@@ -479,13 +493,13 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
 
         variables = {
             "input": {
-                "brandName": str(self._test_brand_name),
-                "productClass": "beer",
                 "status": "pending",
                 "jobMetadata": {
-                    "reviewerId": "reviewer_789",
-                    "reviewerName": "Jane Smith",
-                    "reviewComments": ["Comment 1", "Comment 2", "Comment 3"]
+                    "brandName": str(self._test_brand_name),
+                    "productClass": "beer",
+                    "alcoholContentAbv": "5%",
+                    "netContents": "355",
+                    "labelImageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
                 }
             }
         }

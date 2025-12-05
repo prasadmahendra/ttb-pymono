@@ -7,6 +7,8 @@ from treasury.services.gateways.ttb_api.main.adapter.out.persistence.label_appro
 from treasury.services.gateways.ttb_api.main.application.config.config import GlobalConfig
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import LabelApprovalJob, \
     JobMetadata, LabelImage
+from treasury.services.gateways.ttb_api.main.application.models.domain.label_extraction_data import BrandDataStrict, \
+    ProductInfoStrict, ProductOtherInfo
 from treasury.services.gateways.ttb_api.main.application.models.domain.user import User
 from treasury.services.gateways.ttb_api.main.application.models.dto.label_approval_job_dto import LabelApprovalJobDTO, \
     JobMetadataDTO
@@ -25,10 +27,10 @@ from treasury.services.gateways.ttb_api.main.application.models.gql.label_approv
     ListLabelApprovalJobsResponse
 )
 from treasury.services.gateways.ttb_api.main.application.models.mappers.object_mapper import ObjectMapper
-from treasury.services.gateways.ttb_api.main.application.usecases.label_data_analysis_service import \
+from treasury.services.gateways.ttb_api.main.application.usecases.label_data_analysis import \
     LabelDataAnalysisService
 from treasury.services.gateways.ttb_api.main.application.usecases.security.security_context import SecurityContext
-from treasury.services.gateways.ttb_api.main.application.usecases.user_management_service import UserManagementService
+from treasury.services.gateways.ttb_api.main.application.usecases.user_management import UserManagementService
 
 
 class LabelApprovalJobsService:
@@ -88,9 +90,25 @@ class LabelApprovalJobsService:
                     message="Authenticated user not found"
                 )
 
+            # Extract brand_name and product_class from job_metadata
+            if not input.job_metadata or not input.job_metadata.brand_name or not input.job_metadata.product_class:
+                return CreateLabelApprovalJobResponse(
+                    job=None,
+                    success=False,
+                    message="Brand name and product class are required in job metadata"
+                )
+
+            brand_name = input.job_metadata.brand_name
+            product_class = input.job_metadata.product_class
+
+            # Format net_contents to include units if not already present
+            net_contents_formatted = input.job_metadata.net_contents
+            if net_contents_formatted and not any(unit in net_contents_formatted for unit in ['mL', 'ml', 'cL', 'cl', 'fl oz', 'fL oz']):
+                net_contents_formatted = f"{net_contents_formatted} mL"
+
             # Validate input metadata - alcohol content percentage
             try:
-                self._verify_alcohol_content_percentage_or_raise(input.job_metadata.alcohol_content_percentage)
+                self._verify_alcohol_content_percentage_or_raise(input.job_metadata.alcohol_content_abv)
             except ValueError as ve:
                 return CreateLabelApprovalJobResponse(
                     job=None,
@@ -100,7 +118,7 @@ class LabelApprovalJobsService:
 
             # Validate input metadata - net contents in milli litres
             try:
-                self._verify_net_contents_in_milli_litres_or_raise(input.job_metadata.net_contents_in_milli_litres)
+                self._verify_net_contents_in_milli_litres_or_raise(input.job_metadata.net_contents)
             except ValueError as ve:
                 return CreateLabelApprovalJobResponse(
                     job=None,
@@ -115,28 +133,38 @@ class LabelApprovalJobsService:
                 return CreateLabelApprovalJobResponse(
                     job=None,
                     success=False,
-                    message="Invalid net contents in milli litres: " + str(ve)
+                    message="Invalid label image: " + str(ve)
                 )
 
             # Convert input metadata to JobMetadata domain model
-            job_metadata = JobMetadata()
-            if input.job_metadata:
-                job_metadata = JobMetadata(
-                    reviewer_id=str(authenticated_user.id),
-                    reviewer_name=authenticated_user.name,
-                    review_comments=["Review initiated"],
-                    alcohol_content_percentage=input.job_metadata.alcohol_content_percentage,
-                    net_contents_in_milli_litres=input.job_metadata.net_contents_in_milli_litres,
-                    bottler_info=input.job_metadata.bottler_info,
-                    manufacturer=input.job_metadata.manufacturer,
-                    warnings=input.job_metadata.warnings,
-                    label_images=self._create_label_images_list_from_base64(input.job_metadata.label_image_base64)
-                )
+            job_metadata = JobMetadata(
+                reviewer_id=str(authenticated_user.id),
+                reviewer_name=authenticated_user.name,
+                review_comments=["Review initiated"],
+                product_info=BrandDataStrict(
+                    brand_name=brand_name,
+                    products=[
+                        ProductInfoStrict(
+                            name=brand_name,
+                            product_class_type=input.job_metadata.product_class,
+                            alcohol_content_abv=input.job_metadata.alcohol_content_abv,
+                            net_contents=net_contents_formatted,
+                            other_info=ProductOtherInfo(
+                                # TODO: Future enhancement - extract these details from label using OCR/image recognition
+                                bottler_info=None,
+                                manufacturer=None,
+                                warnings=None
+                            )
+                        )
+                    ]
+                ),
+                label_images=self._create_label_images_list_from_base64(input.job_metadata.label_image_base64)
+            )
 
             # Create the job domain object
             job = LabelApprovalJob(
-                brand_name=input.brand_name,
-                product_class=input.product_class,
+                brand_name=brand_name,
+                product_class=product_class,
                 status=input.status or "pending",
                 job_metadata=job_metadata
             )
