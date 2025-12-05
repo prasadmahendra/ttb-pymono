@@ -31,9 +31,7 @@ class TestQueriesLabelApprovalJobsRelated(BaseApiServiceTestCase):
         job_metadata = JobMetadataDTO(
             reviewer_id="reviewer_123",
             reviewer_name="Test Reviewer",
-            review_comments=["Initial review"],
-            alcohol_content="5.0%",
-            net_contents="355"
+            review_comments=["Initial review"]
         )
 
         return LabelApprovalJobDTO(

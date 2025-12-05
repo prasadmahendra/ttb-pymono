@@ -8,8 +8,8 @@ from pythonjsonlogger.json import JsonFormatter
 
 from treasury.services.gateways.ttb_api.main.application.utils.datetime_utils import DateTimeUtils
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '.env'))
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '.env.local'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', '.env.local'))
 _config = {
     **dotenv_values(os.path.join(os.path.dirname(__file__), '.env')),  # load shared development variables
     **dotenv_values(os.path.join(os.path.dirname(__file__), '.env.secret')),  # load sensitive variables

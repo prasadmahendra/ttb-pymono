@@ -5,7 +5,6 @@ from strawberry.types import Info
 from treasury.services.gateways.ttb_api.main.adapter.out.persistence.label_approvals_persistence_adapter import \
     LabelApprovalJobsPersistenceAdapter
 from treasury.services.gateways.ttb_api.main.application.config.config import GlobalConfig
-from treasury.services.gateways.ttb_api.main.application.models.domain.iam_role_permissions import IamRolePermissions
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import LabelApprovalJob, \
     JobMetadata, LabelImage
 from treasury.services.gateways.ttb_api.main.application.models.domain.user import User
@@ -26,6 +25,8 @@ from treasury.services.gateways.ttb_api.main.application.models.gql.label_approv
     ListLabelApprovalJobsResponse
 )
 from treasury.services.gateways.ttb_api.main.application.models.mappers.object_mapper import ObjectMapper
+from treasury.services.gateways.ttb_api.main.application.usecases.label_data_analysis_service import \
+    LabelDataAnalysisService
 from treasury.services.gateways.ttb_api.main.application.usecases.security.security_context import SecurityContext
 from treasury.services.gateways.ttb_api.main.application.usecases.user_management_service import UserManagementService
 
@@ -34,10 +35,12 @@ class LabelApprovalJobsService:
     def __init__(
             self,
             label_approval_jobs_persistence_adapter: LabelApprovalJobsPersistenceAdapter = None,
+            label_data_analysis_service: LabelDataAnalysisService = None,
             user_management_service: UserManagementService = None
     ) -> None:
         self._logger = GlobalConfig.get_logger(__name__)
         self._label_approval_jobs_persistence_adapter_lazy = label_approval_jobs_persistence_adapter
+        self._label_data_analysis_service_lazy = label_data_analysis_service
         self._user_management_service_lazy = user_management_service
 
     @classmethod
@@ -52,6 +55,13 @@ class LabelApprovalJobsService:
         return self._user_management_service_lazy
 
     @property
+    def _label_data_analysis_service(self) -> LabelDataAnalysisService:
+        # Lazy initialization of the label data analysis service
+        if self._label_data_analysis_service_lazy is None:
+            self._label_data_analysis_service_lazy = LabelDataAnalysisService()
+        return self._label_data_analysis_service_lazy
+
+    @property
     def _label_approval_jobs_persistence_adapter(self) -> LabelApprovalJobsPersistenceAdapter:
         # Lazy initialization of the persistence adapter
         if self._label_approval_jobs_persistence_adapter_lazy is None:
@@ -59,24 +69,6 @@ class LabelApprovalJobsService:
         return self._label_approval_jobs_persistence_adapter_lazy
 
     def create_label_approval_job(
-            self,
-            info: Info,
-            input: CreateLabelApprovalJobInput
-    ) -> CreateLabelApprovalJobResponse:
-        security_context = SecurityContext.from_info(info)
-
-        @security_context.role_permissions_required(
-            permissions=[IamRolePermissions.TTB_LABEL_REVIEWS_CREATE]
-        )
-        def role_restricted_call() -> CreateLabelApprovalJobResponse:
-            return self._create_label_approval_job(
-                info=info,
-                input=input
-            )
-
-        return role_restricted_call()
-
-    def _create_label_approval_job(
             self,
             info: Info,
             input: CreateLabelApprovalJobInput
@@ -150,7 +142,7 @@ class LabelApprovalJobsService:
             )
 
             # Persist the job
-            created_job = self._label_approval_jobs_persistence_adapter.create_approval_job(
+            created_job: LabelApprovalJob = self._label_approval_jobs_persistence_adapter.create_approval_job(
                 job=job,
                 created_by=authenticated_entity
             )
@@ -160,6 +152,14 @@ class LabelApprovalJobsService:
                     job=None,
                     success=False,
                     message="Failed to create label approval job"
+                )
+
+            job_with_analysis: Optional[LabelApprovalJob] = self.analyze_label_images(created_job)
+            if job_with_analysis is not None:
+                self._label_approval_jobs_persistence_adapter.set_job_metadata(
+                    job_id=created_job.id,
+                    job_metadata=job_with_analysis.get_job_metadata().model_dump(exclude_none=False),
+                    updated_by=authenticated_entity
                 )
 
             # Convert to DTO
@@ -179,6 +179,18 @@ class LabelApprovalJobsService:
                 success=False,
                 message=f"Error creating label approval job: {str(e)}"
             )
+
+    def analyze_label_images(
+            self,
+            job: LabelApprovalJob
+    ) -> Optional[LabelApprovalJob]:
+        """Analyze label images using image recognition (stub implementation)"""
+        # In a real-world scenario, this would call an image recognition service
+        # Here we just log and return the job unchanged
+        self._logger.info(f"Analyzing label images for job id {job.id}")
+        updated_job: Optional[LabelApprovalJob] = self._label_data_analysis_service.analyze_label_data(job=job)
+        return updated_job
+
 
     @classmethod
     def _verify_net_contents_in_milli_litres_or_raise(cls, net_contents_in_milli_litres: Optional[str]) -> None:
@@ -246,25 +258,6 @@ class LabelApprovalJobsService:
         )]
 
     def set_label_approval_job_status(
-            self,
-            info: Info,
-            input: SetLabelApprovalJobStatusInput
-    ) -> SetLabelApprovalJobStatusResponse:
-        """Set the status of a label approval job"""
-        security_context = SecurityContext.from_info(info)
-
-        @security_context.role_permissions_required(
-            permissions=[IamRolePermissions.TTB_LABEL_REVIEWS_UPDATE]
-        )
-        def role_restricted_call() -> SetLabelApprovalJobStatusResponse:
-            return self._set_label_approval_job_status(
-                info=info,
-                input=input
-            )
-
-        return role_restricted_call()
-
-    def _set_label_approval_job_status(
             self,
             info: Info,
             input: SetLabelApprovalJobStatusInput
@@ -346,25 +339,6 @@ class LabelApprovalJobsService:
             info: Info,
             input: AddReviewCommentInput
     ) -> AddReviewCommentResponse:
-        """Add a review comment to a label approval job"""
-        security_context = SecurityContext.from_info(info)
-
-        @security_context.role_permissions_required(
-            permissions=[IamRolePermissions.TTB_LABEL_REVIEWS_UPDATE]
-        )
-        def role_restricted_call() -> AddReviewCommentResponse:
-            return self._add_review_comment(
-                info=info,
-                input=input
-            )
-
-        return role_restricted_call()
-
-    def _add_review_comment(
-            self,
-            info: Info,
-            input: AddReviewCommentInput
-    ) -> AddReviewCommentResponse:
         """Internal method to add a review comment to a label approval job"""
         try:
             security_context = SecurityContext.from_info(info)
@@ -429,25 +403,6 @@ class LabelApprovalJobsService:
             )
 
     def list_label_approval_jobs(
-            self,
-            info: Info,
-            input: ListLabelApprovalJobsInput
-    ) -> ListLabelApprovalJobsResponse:
-        """List label approval jobs with optional filters and pagination"""
-        security_context = SecurityContext.from_info(info)
-
-        @security_context.role_permissions_required(
-            permissions=[IamRolePermissions.TTB_LABEL_REVIEWS_LIST]
-        )
-        def role_restricted_call() -> ListLabelApprovalJobsResponse:
-            return self._list_label_approval_jobs(
-                info=info,
-                input=input
-            )
-
-        return role_restricted_call()
-
-    def _list_label_approval_jobs(
             self,
             info: Info,
             input: ListLabelApprovalJobsInput

@@ -6,6 +6,8 @@ import strawberry
 
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import JobMetadata, \
     LabelApprovalJob
+from treasury.services.gateways.ttb_api.main.application.models.dto.label_extraction_dto import BrandDataStrictDTO
+from treasury.services.gateways.ttb_api.main.application.models.dto.label_image_dto import LabelImageDTO
 
 
 @strawberry.experimental.pydantic.type(model=JobMetadata)
@@ -14,11 +16,8 @@ class JobMetadataDTO:
     reviewer_id: Optional[str] = None
     reviewer_name: Optional[str] = None
     review_comments: Optional[list[str]] = None
-    alcohol_content: Optional[str] = None
-    net_contents: Optional[str] = None
-    bottler_info: Optional[str] = None
-    manufacturer: Optional[str] = None
-    warnings: Optional[str] = None
+    product_info: Optional[BrandDataStrictDTO] = None
+    label_images: Optional[list[LabelImageDTO]] = None
 
 
 @strawberry.experimental.pydantic.type(model=LabelApprovalJob)

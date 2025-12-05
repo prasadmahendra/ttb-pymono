@@ -1,11 +1,9 @@
 import unittest
 import uuid
 from datetime import datetime
-from typing import Optional
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 
 from treasury.services.gateways.ttb_api.main.application.models.domain.entity_descriptor import EntityDescriptor
-from treasury.services.gateways.ttb_api.main.application.models.domain.iam_role_permissions import IamRolePermissions
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import (
     LabelApprovalJob,
     JobMetadata,
@@ -192,7 +190,6 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
                     'id': str(self.test_user_id),
                     'org_id': str(self.test_org_id)
                 },
-                'permissions': [IamRolePermissions.TTB_LABEL_REVIEWS_CREATE]
             }
         }
         return mock_info
@@ -643,7 +640,6 @@ class TestLabelApprovalJobsServiceSetStatus(unittest.TestCase):
                     'id': str(self.test_user_id),
                     'org_id': str(self.test_org_id)
                 },
-                'permissions': [IamRolePermissions.TTB_LABEL_REVIEWS_UPDATE]
             }
         }
         return mock_info
@@ -858,7 +854,6 @@ class TestLabelApprovalJobsServiceAddComment(unittest.TestCase):
                     'id': str(self.test_user_id),
                     'org_id': str(self.test_org_id)
                 },
-                'permissions': [IamRolePermissions.TTB_LABEL_REVIEWS_UPDATE]
             }
         }
         return mock_info
@@ -1078,7 +1073,6 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
                     'id': str(self.test_user_id),
                     'org_id': str(self.test_org_id)
                 },
-                'permissions': [IamRolePermissions.TTB_LABEL_REVIEWS_LIST]
             }
         }
         return mock_info

@@ -21,8 +21,6 @@ class BaseApiServiceTestCase(unittest.TestCase):
         self._security_context_factory = MagicMock(spec=SecurityContextFactory)
 
         self._security_context: SecurityContext = MagicMock(spec=SecurityContext)
-        self._security_context.role_permissions_required.side_effect = SecurityContextTestUtils.mocked_role_decorator()
-
         self._security_context_factory.from_strawberry_info.return_value = self._security_context
         self._security_context_factory.from_strawberry_request.return_value = self._security_context
         os.environ.setdefault('ENV_IS_LOCAL', 'true')

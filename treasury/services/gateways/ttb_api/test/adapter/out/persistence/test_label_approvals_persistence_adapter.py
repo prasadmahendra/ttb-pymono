@@ -64,7 +64,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         brand_name = str(uuid.uuid4())
         created_by = EntityDescriptor.of_user(id=str(self.test_user_id), org_id=self.test_org_id)
 
-        metadata = JobMetadata(alcohol_content_percentage="12%")
+        metadata = JobMetadata(reviewer_id="test_reviewer", reviewer_name="Test User")
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="wine",
@@ -81,7 +81,8 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertEqual(result.status, "pending")
         metadata_obj = result.get_job_metadata()
         self.assertIsInstance(metadata_obj, JobMetadata)
-        self.assertEqual(metadata_obj.alcohol_content_percentage, "12%")
+        self.assertEqual(metadata_obj.reviewer_id, "test_reviewer")
+        self.assertEqual(metadata_obj.reviewer_name, "Test User")
 
     def test_create_approval_job_with_system_entity(self):
         """Test creating a new approval job with system entity descriptor"""
@@ -110,7 +111,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         brand_name = str(uuid.uuid4())
         created_by = EntityDescriptor.of_user(id=str(self.test_user_id), org_id=self.test_org_id)
 
-        metadata = JobMetadata(net_contents_in_milli_litres="355")
+        metadata = JobMetadata(reviewer_id="test_reviewer", review_comments=["Initial comment"])
         job = LabelApprovalJob(
             brand_name=brand_name,
             product_class="beer",
@@ -130,7 +131,8 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertEqual(retrieved_job.status, "pending")
         metadata_obj = retrieved_job.get_job_metadata()
         self.assertIsInstance(metadata_obj, JobMetadata)
-        self.assertEqual(metadata_obj.net_contents_in_milli_litres, "355")
+        self.assertEqual(metadata_obj.reviewer_id, "test_reviewer")
+        self.assertEqual(metadata_obj.review_comments, ["Initial comment"])
 
     def test_get_approval_job_by_id_not_exists(self):
         """Test retrieving a non-existent approval job by ID (should return None)"""
@@ -215,12 +217,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         metadata = JobMetadata(
             reviewer_id="reviewer_123",
             reviewer_name="John Doe",
-            review_comments=["Looks good", "Approved"],
-            alcohol_content_percentage="40%",
-            net_contents_in_milli_litres="750",
-            bottler_info="XYZ Bottlers",
-            manufacturer="ABC Distillery",
-            warnings="Contains sulfites"
+            review_comments=["Looks good", "Approved"]
         )
 
         job = LabelApprovalJob(
@@ -238,11 +235,6 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertEqual(metadata_obj.reviewer_id, "reviewer_123")
         self.assertEqual(metadata_obj.reviewer_name, "John Doe")
         self.assertEqual(metadata_obj.review_comments, ["Looks good", "Approved"])
-        self.assertEqual(metadata_obj.alcohol_content_percentage, "40%")
-        self.assertEqual(metadata_obj.net_contents_in_milli_litres, "750")
-        self.assertEqual(metadata_obj.bottler_info, "XYZ Bottlers")
-        self.assertEqual(metadata_obj.manufacturer, "ABC Distillery")
-        self.assertEqual(metadata_obj.warnings, "Contains sulfites")
 
         # Verify by retrieving the job
         retrieved = self.adapter.get_approval_job_by_id(event_id=result.id)
@@ -251,11 +243,6 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertEqual(retrieved_metadata.reviewer_id, "reviewer_123")
         self.assertEqual(retrieved_metadata.reviewer_name, "John Doe")
         self.assertEqual(retrieved_metadata.review_comments, ["Looks good", "Approved"])
-        self.assertEqual(retrieved_metadata.alcohol_content_percentage, "40%")
-        self.assertEqual(retrieved_metadata.net_contents_in_milli_litres, "750")
-        self.assertEqual(retrieved_metadata.bottler_info, "XYZ Bottlers")
-        self.assertEqual(retrieved_metadata.manufacturer, "ABC Distillery")
-        self.assertEqual(retrieved_metadata.warnings, "Contains sulfites")
 
     def test_set_job_status_success(self):
         """Test updating job status successfully"""
@@ -377,7 +364,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         new_metadata = JobMetadata(
             reviewer_id="new_reviewer",
             reviewer_name="Jane Smith",
-            alcohol_content_percentage="45%"
+            review_comments=["Updated comment"]
         )
 
         updated_job = self.adapter.set_job_metadata(
@@ -391,7 +378,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         updated_metadata = updated_job.get_job_metadata()
         self.assertEqual(updated_metadata.reviewer_id, "new_reviewer")
         self.assertEqual(updated_metadata.reviewer_name, "Jane Smith")
-        self.assertEqual(updated_metadata.alcohol_content_percentage, "45%")
+        self.assertEqual(updated_metadata.review_comments, ["Updated comment"])
 
         # Verify updated_by fields were set correctly
         self.assertEqual(updated_job.updated_by_entity, "user")
@@ -428,8 +415,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         initial_metadata = JobMetadata(
             reviewer_id="reviewer_1",
             reviewer_name="John Doe",
-            alcohol_content_percentage="40%",
-            net_contents_in_milli_litres="750"
+            review_comments=["Initial comment", "Second comment"]
         )
         job = LabelApprovalJob(
             brand_name=brand_name,
@@ -443,8 +429,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         # Update with new metadata containing only some fields
         updated_by = EntityDescriptor.of_system()
         new_metadata = JobMetadata(
-            reviewer_id="reviewer_2",
-            warnings="Contains sulfites"
+            reviewer_id="reviewer_2"
         )
 
         updated_job = self.adapter.set_job_metadata(
@@ -457,9 +442,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         updated_metadata = updated_job.get_job_metadata()
         self.assertEqual(updated_metadata.reviewer_id, "reviewer_2")
         self.assertIsNone(updated_metadata.reviewer_name)  # Should be None, not "John Doe"
-        self.assertIsNone(updated_metadata.alcohol_content_percentage)  # Should be None, not "40%"
-        self.assertIsNone(updated_metadata.net_contents_in_milli_litres)  # Should be None, not "750"
-        self.assertEqual(updated_metadata.warnings, "Contains sulfites")
+        self.assertIsNone(updated_metadata.review_comments)  # Should be None, not ["Initial comment", "Second comment"]
 
     def test_list_approval_jobs_no_filters(self):
         """Test listing all approval jobs without filters"""

@@ -8,10 +8,43 @@ from sqlalchemy.sql.schema import Index
 from sqlmodel import SQLModel, Field
 from pydantic import BaseModel, field_validator, field_serializer
 
+from treasury.services.gateways.ttb_api.main.application.models.domain.label_extraction_data import ProductOtherInfo, \
+    ProductInfoStrict, BrandDataStrict
+
+
 class LabelApprovalStatus(str, Enum):
     pending = "pending"
     approved = "approved"
     rejected = "rejected"
+
+
+class LabelImageAnalysisResult(BaseModel):
+    # Does the text on the label contain the Brand Name exactly as provided in the form?
+    brand_name_found: bool = False
+    brand_name_found_results_reasoning: Optional[str] = None
+
+    # Does it contain the stated Product Class/Type (or something very close/identical)?
+    product_class_found: bool = False
+    product_class_found_results_reasoning: Optional[str] = None
+
+    # Does it mention the Alcohol Content (within the text, look for a number and “%” that matches the
+    # form input)?
+    alcohol_content_found: bool = False
+    alcohol_content_found_results_reasoning: Optional[str] = None
+
+    # If you included Net Contents in the form, check if the volume (e.g. “750 mL” or “12 OZ”) appears on
+    # the label.
+    net_contents_found: bool = False
+    net_contents_found_results_reasoning: Optional[str] = None
+
+    # Health Warning Statement: For alcoholic beverages, a government warning is mandatory by law. A
+    # real TTB check would verify that the label has the exact text of the warning statement (the
+    # standardized text about pregnancy and driving) . For simplicity, you can at least check that the
+    # phrase “GOVERNMENT WARNING” appears on the label image text (and possibly that some portion
+    # of the warning text is present). This can be a bonus feature if you have time.
+    health_warning_found: bool = False
+    health_warning_found_results_reasoning: Optional[str] = None
+
 
 class LabelImage(BaseModel):
     image_url: Optional[str] = None
@@ -29,17 +62,14 @@ class LabelImage(BaseModel):
     rejected: Optional[bool] = None
     rejected_date: Optional[datetime] = None
 
+    analysis_result: Optional[LabelImageAnalysisResult] = None
+
+
 class JobMetadata(BaseModel):
     reviewer_id: Optional[str] = None
     reviewer_name: Optional[str] = None
     review_comments: Optional[list[str]] = None
-    alcohol_content_percentage: Optional[str] = None
-    net_contents_in_milli_litres: Optional[str] = None
-
-    # Bonus fields (optional for the coding test)
-    bottler_info: Optional[str] = None
-    manufacturer: Optional[str] = None
-    warnings: Optional[str] = None
+    product_info: Optional[BrandDataStrict] = None
     label_images: Optional[list[LabelImage]] = None
 
 
@@ -65,7 +95,8 @@ class LabelApprovalJob(SQLModel, table=True):
     brand_name: Optional[str] = Field(nullable=False)
     product_class: Optional[str] = Field(nullable=False)
     status: str = Field(default=LabelApprovalStatus.pending.value, nullable=False)
-    job_metadata: dict[str, Any] = Field(sa_column=Column("metadata", JSON, nullable=False), default_factory=lambda: JobMetadata().model_dump(exclude_none=False))
+    job_metadata: dict[str, Any] = Field(sa_column=Column("metadata", JSON, nullable=False),
+                                         default_factory=lambda: JobMetadata().model_dump(exclude_none=False))
     created_at: datetime = Field(nullable=False)
     updated_at: datetime = Field(nullable=False)
     created_by_entity: str = Field(nullable=False)

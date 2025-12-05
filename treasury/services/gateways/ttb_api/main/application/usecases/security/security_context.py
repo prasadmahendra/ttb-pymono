@@ -1,6 +1,4 @@
-import uuid
-from functools import wraps
-from typing import Optional, List, Set
+from typing import Optional
 
 from starlette.datastructures import Headers
 from starlette.requests import Request
@@ -10,7 +8,6 @@ from pydantic import BaseModel
 
 from treasury.services.gateways.ttb_api.main.application.config.config import GlobalConfig
 from treasury.services.gateways.ttb_api.main.application.models.domain.entity_descriptor import EntityDescriptor
-from treasury.services.gateways.ttb_api.main.application.models.domain.iam_role_permissions import IamRolePermissions
 
 
 class _AuthHeaderVerification(BaseModel):
@@ -46,27 +43,6 @@ class SecurityContext:
     def verify_bearer_token(self) -> Optional[_AuthHeaderVerification]:
         # TODO - Add support auth later
         return None
-
-    def role_permissions_required(
-            self,
-            permissions: List[IamRolePermissions]
-    ):
-        """
-        Decorator to enforce role-based permissions on a function.
-        Checks to see if the authenticated entity has the required permissions.
-        :param permissions:
-        :return:
-        """
-
-        def wrapper(f):
-            @wraps(f)
-            def wrapped(*args, **kwargs):
-                # TODO - Implement role permission checks here
-                return f(*args, **kwargs)
-
-            return wrapped
-
-        return wrapper
 
     def get_x_forwarded_for_header(self) -> Optional[str]:
         try:

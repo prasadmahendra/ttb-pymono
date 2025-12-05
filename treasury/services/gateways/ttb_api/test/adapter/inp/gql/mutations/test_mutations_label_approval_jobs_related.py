@@ -43,12 +43,7 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
         self._test_job_metadata_dto = JobMetadataDTO(
             reviewer_id="reviewer_123",
             reviewer_name="John Doe",
-            review_comments=["Looks good", "Approved"],
-            alcohol_content="40%",
-            net_contents="750ml",
-            bottler_info="XYZ Bottlers",
-            manufacturer="ABC Distillery",
-            warnings="Contains sulfites"
+            review_comments=["Looks good", "Approved"]
         )
 
         # Sample label approval job DTO
@@ -91,11 +86,6 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
                         reviewerId
                         reviewerName
                         reviewComments
-                        alcoholContent
-                        netContents
-                        bottlerInfo
-                        manufacturer
-                        warnings
                     }
                     createdAt
                     updatedAt
@@ -115,12 +105,7 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
                 "jobMetadata": {
                     "reviewerId": "reviewer_123",
                     "reviewerName": "John Doe",
-                    "reviewComments": ["Looks good", "Approved"],
-                    "alcoholContentPercentage": "40%",
-                    "netContentsInMilliLitres": "750ml",
-                    "bottlerInfo": "XYZ Bottlers",
-                    "manufacturer": "ABC Distillery",
-                    "warnings": "Contains sulfites"
+                    "reviewComments": ["Looks good", "Approved"]
                 }
             }
         }
@@ -153,8 +138,6 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
         self.assertIsNotNone(job_metadata)
         self.assertEqual(job_metadata.get("reviewerId"), "reviewer_123")
         self.assertEqual(job_metadata.get("reviewerName"), "John Doe")
-        self.assertEqual(job_metadata.get("alcoholContent"), "40%")
-        self.assertEqual(job_metadata.get("netContents"), "750ml")
 
         # Verify service was called
         MutationsCommon._label_approval_jobs_service.create_label_approval_job.assert_called_once()
@@ -533,9 +516,7 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
         updated_metadata_dto = JobMetadataDTO(
             reviewer_id="reviewer_123",
             reviewer_name="John Doe",
-            review_comments=["Initial review", "Approved after review"],
-            alcohol_content="40%",
-            net_contents="750ml"
+            review_comments=["Initial review", "Approved after review"]
         )
 
         updated_job_dto = LabelApprovalJobDTO(
@@ -733,9 +714,7 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
         updated_metadata_dto = JobMetadataDTO(
             reviewer_id="reviewer_123",
             reviewer_name="John Doe",
-            review_comments=["Initial review", "Additional feedback"],
-            alcohol_content="40%",
-            net_contents="750ml"
+            review_comments=["Initial review", "Additional feedback"]
         )
 
         updated_job_dto = LabelApprovalJobDTO(
