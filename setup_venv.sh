@@ -1,0 +1,1 @@
+uv venv .venv --prompt treasury-pymono  --python 3.13

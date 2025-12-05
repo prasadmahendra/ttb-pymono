@@ -1,0 +1,39 @@
+[project]
+name = "pymono"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "boto3>=1.40.73",
+    "email-validator>=2.3.0",
+    "fastapi>=0.121.2",
+    "gunicorn>=23.0.0",
+    "more-itertools>=10.8.0",
+    "openai>=2.6.0",
+    "pg8000>=1.31.5",
+    "pottery>=3.0.1",
+    "psycopg2-binary>=2.9.11",
+    "pydantic[email]>=2.11.9",
+    "python-jose[cryptography]>=3.3.0",
+    "python-dotenv>=1.1.1",
+    "python-json-logger>=3.3.0",
+    "sqlalchemy>=2.0.43",
+    "sqlmodel>=0.0.25",
+    "starlette>=0.48.0",
+    "strawberry-graphql[pydantic]>=0.282.0",
+    "turbopuffer[fast]>=1.4.1",
+    "uvicorn>=0.38.0",
+    "uvloop>=0.21.1",
+]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.10.7",
+    "pytest>=8.4.2",
+]
+
+[tool.uv]
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'arm64'"
+]
