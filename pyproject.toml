@@ -4,11 +4,8 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-
-[project.scripts]
-app = "treasury.services.gateways.ttb_api.__main__:main"
-
 dependencies = [
+    "dotenv>=0.9.9",
     "boto3>=1.40.73",
     "email-validator>=2.3.0",
     "fastapi>=0.121.2",
@@ -43,3 +40,6 @@ dev = [
 required-environments = [
     "sys_platform == 'darwin' and platform_machine == 'arm64'"
 ]
+
+[project.scripts]
+app = "treasury.services.gateways.ttb_api.__main__:main"
