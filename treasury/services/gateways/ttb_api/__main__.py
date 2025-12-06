@@ -21,6 +21,7 @@ def bootstrap_test_data() -> None:
     # We'd never do this in production code. This is just to make it easier to run locally
     # and for this coding example.
     orm_engine = DbConfig.get_orm_engine(local_on_disk=True)
+    logger.info("[SQLModel] create_all")
     SQLModel.metadata.create_all(bind=orm_engine)
 
 def main() -> None:
