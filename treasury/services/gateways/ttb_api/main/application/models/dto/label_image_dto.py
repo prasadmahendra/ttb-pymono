@@ -8,6 +8,7 @@ from treasury.services.gateways.ttb_api.main.application.models.domain.label_app
     LabelImage,
     LabelImageAnalysisResult
 )
+from treasury.services.gateways.ttb_api.main.application.models.dto.label_extraction_dto import BrandDataStrictDTO
 
 
 @strawberry.experimental.pydantic.type(model=LabelImageAnalysisResult)
@@ -36,4 +37,5 @@ class LabelImageDTO:
     approved_date: Optional[datetime] = None
     rejected: Optional[bool] = None
     rejected_date: Optional[datetime] = None
+    extracted_product_info: Optional[BrandDataStrictDTO] = None
     analysis_result: Optional[LabelImageAnalysisResultDTO] = None

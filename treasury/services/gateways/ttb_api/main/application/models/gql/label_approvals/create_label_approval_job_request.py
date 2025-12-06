@@ -14,6 +14,9 @@ class JobMetadataInput:
     product_class: Optional[str] = None
     alcohol_content_abv: Optional[str] = None
     net_contents: Optional[str] = None
+    bottler_info: Optional[str] = None
+    manufacturer: Optional[str] = None
+    warnings: Optional[str] = None
     label_image_base64: Optional[str] = None  # base64 representation of the label image
 
 

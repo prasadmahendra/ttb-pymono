@@ -96,10 +96,9 @@ class LabelApprovalJob(SQLModel, table=True):
     brand_name: Optional[str] = Field(nullable=False)
     product_class: Optional[str] = Field(nullable=False)
     status: LabelApprovalStatus = Field(default=LabelApprovalStatus.pending, nullable=False)
-    _job_metadata: Union[dict, JobMetadata] = Field(
+    job_metadata: Union[dict, JobMetadata] = Field(
         sa_column=Column("metadata", JSON, nullable=False),
-        default_factory=lambda: JobMetadata(),
-        alias="job_metadata"
+        default_factory=lambda: JobMetadata().model_dump(exclude_none=True),
     )
     created_at: datetime = Field(nullable=False)
     updated_at: datetime = Field(nullable=False)
@@ -110,22 +109,7 @@ class LabelApprovalJob(SQLModel, table=True):
     updated_by_entity_id: Optional[str] = Field(default=None, nullable=True)
     updated_by_entity_domain: Optional[str] = Field(default=None, nullable=True)
 
-    @property
-    def job_metadata(self) -> JobMetadata:
-        """Get job_metadata as JobMetadata object, deserializing from dict if needed"""
-        if isinstance(self._job_metadata, dict):
-            self._job_metadata = JobMetadata(**self._job_metadata)
-        return self._job_metadata
-
-    @job_metadata.setter
-    def job_metadata(self, value: Union[dict, JobMetadata]) -> None:
-        """Set job_metadata, accepting either dict or JobMetadata object"""
-        if isinstance(value, dict):
-            self._job_metadata = JobMetadata(**value)
-        else:
-            self._job_metadata = value
-
-    @field_validator('_job_metadata', mode='before')
+    @field_validator('job_metadata', mode='before')
     @classmethod
     def validate_job_metadata(cls, v: Union[dict, JobMetadata]) -> Union[dict, JobMetadata]:
         """Convert dict to JobMetadata before assignment"""
@@ -133,7 +117,7 @@ class LabelApprovalJob(SQLModel, table=True):
             return JobMetadata(**v)
         return v
 
-    @field_serializer('_job_metadata')
+    @field_serializer('job_metadata')
     def serialize_job_metadata(self, v: Union[dict, JobMetadata], _info) -> dict[str, Any]:
         """Serialize job_metadata to dict"""
         if isinstance(v, JobMetadata):

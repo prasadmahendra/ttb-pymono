@@ -118,12 +118,12 @@ class LabelApprovalJobsService:
 
             # Validate input metadata - net contents in milli litres
             try:
-                self._verify_net_contents_in_milli_litres_or_raise(input.job_metadata.net_contents)
+                self._verify_net_contents_or_raise(input.job_metadata.net_contents)
             except ValueError as ve:
                 return CreateLabelApprovalJobResponse(
                     job=None,
                     success=False,
-                    message="Invalid net contents in milli litres: " + str(ve)
+                    message="Invalid net contents: " + str(ve)
                 )
 
             # Validate input metadata - one image required (jpg, png or gif)
@@ -151,9 +151,9 @@ class LabelApprovalJobsService:
                             net_contents=net_contents_formatted,
                             other_info=ProductOtherInfo(
                                 # TODO: Future enhancement - extract these details from label using OCR/image recognition
-                                bottler_info=None,
-                                manufacturer=None,
-                                warnings=None
+                                bottler_info=input.job_metadata.bottler_info,
+                                manufacturer=input.job_metadata.manufacturer,
+                                warnings=input.job_metadata.warnings
                             )
                         )
                     ]
@@ -221,12 +221,18 @@ class LabelApprovalJobsService:
 
 
     @classmethod
-    def _verify_net_contents_in_milli_litres_or_raise(cls, net_contents_in_milli_litres: Optional[str]) -> None:
+    def _verify_net_contents_or_raise(cls, net_contents: Optional[str]) -> None:
         """Verify that the net contents in milli litres is a valid positive number string"""
-        if net_contents_in_milli_litres is None:
+        if net_contents is None:
             return
         try:
-            value = float(net_contents_in_milli_litres)
+            # regexp to extract numeric part only
+            net_contents = net_contents.strip()
+
+            # Remove any non-numeric characters (like units)
+            numeric_part = ''.join(filter(lambda c: c.isdigit() or c == '.' or c == '-', net_contents))
+
+            value = float(numeric_part)
         except ValueError:
             raise ValueError("Net contents in milli litres must be a valid number")
 

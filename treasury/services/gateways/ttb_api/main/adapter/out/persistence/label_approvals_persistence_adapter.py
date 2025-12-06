@@ -8,7 +8,7 @@ from sqlalchemy import and_, or_, delete, func, String
 from sqlalchemy.orm.session import Session
 
 from treasury.services.gateways.ttb_api.main.application.models.domain.entity_descriptor import EntityDescriptor
-from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import LabelApprovalJob
+from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import LabelApprovalJob, JobMetadata
 from treasury.services.gateways.ttb_api.main.application.utils.datetime_utils import DateTimeUtils
 
 
@@ -56,7 +56,7 @@ class LabelApprovalJobsPersistenceAdapter(PersistenceAdapterBase):
             result = session.query(LabelApprovalJob).filter(
                 LabelApprovalJob.id == event_id  # type: ignore
             ).first()
-            return result
+            return self._ensure_job_metadata_deserialized(result)
 
     def set_job_status(
             self,
@@ -156,10 +156,31 @@ class LabelApprovalJobsPersistenceAdapter(PersistenceAdapterBase):
             # Execute query
             jobs = query.all()
 
+            # Ensure job_metadata is deserialized
+            jobs = self._ensure_jobs_metadata_deserialized(jobs)
+
             return jobs, total_count
+
+    @classmethod
+    def _ensure_job_metadata_deserialized(cls, job: Optional[LabelApprovalJob]) -> Optional[LabelApprovalJob]:
+        """Ensure job_metadata is a JobMetadata object, not a dict.
+
+        SQLAlchemy loads the JSON column as a dict, so we need to convert it to JobMetadata.
+        """
+        if job is not None and isinstance(job.job_metadata, dict):
+            job.job_metadata = JobMetadata(**job.job_metadata)
+        return job
+
+    @classmethod
+    def _ensure_jobs_metadata_deserialized(cls, jobs: list[LabelApprovalJob]) -> list[LabelApprovalJob]:
+        """Ensure job_metadata is a JobMetadata object for all jobs in the list."""
+        for job in jobs:
+            if isinstance(job.job_metadata, dict):
+                job.job_metadata = JobMetadata(**job.job_metadata)
+        return jobs
 
     @classmethod
     def _validate_for_creation(cls, new_job: LabelApprovalJob) -> None:
         """Validate the job before creation"""
-        # Add any necessary validation logic here
+        # TODO - Add any necessary validation logic here
         pass
