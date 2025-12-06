@@ -27,9 +27,9 @@ def bootstrap_test_data() -> None:
 def main() -> None:
     """Main entry point for the GraphQL API service"""
     logger.info("[starting] service")
-    bootstrap_test_data()
     FlaskConfig.serve("treasury.services.gateways.ttb_api.__main__:app", port=8080, workers=4)
     logger.info("[exiting] service")
 
 if __name__ == "__main__":
+    bootstrap_test_data()
     main()

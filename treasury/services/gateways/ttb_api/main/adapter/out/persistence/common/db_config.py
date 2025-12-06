@@ -35,6 +35,7 @@ class DbConfig:
 
         if local_on_disk:
             temp_folder_dir = tempfile.gettempdir()
+            cls._logger.info(f"sqlite:///{temp_folder_dir}/{local_db_file_name}")
             engine: Engine = create_engine(
                 f"sqlite:///{temp_folder_dir}/{local_db_file_name}",
                 echo=echo,
