@@ -40,25 +40,25 @@ class TestLabelApprovalJobsServiceValidations(unittest.TestCase):
     def test_verify_net_contents_in_milli_litres_valid(self):
         """Test validation with valid net contents"""
         # Should not raise exception
-        LabelApprovalJobsService._verify_net_contents_in_milli_litres_or_raise("355")
-        LabelApprovalJobsService._verify_net_contents_in_milli_litres_or_raise("750.5")
-        LabelApprovalJobsService._verify_net_contents_in_milli_litres_or_raise("1000")
+        LabelApprovalJobsService._verify_net_contents_or_raise("355")
+        LabelApprovalJobsService._verify_net_contents_or_raise("750.5")
+        LabelApprovalJobsService._verify_net_contents_or_raise("1000")
 
     def test_verify_net_contents_in_milli_litres_none(self):
         """Test validation with None (should be allowed)"""
         # Should not raise exception
-        LabelApprovalJobsService._verify_net_contents_in_milli_litres_or_raise(None)
+        LabelApprovalJobsService._verify_net_contents_or_raise(None)
 
     def test_verify_net_contents_in_milli_litres_negative(self):
         """Test validation with negative value"""
         with self.assertRaises(ValueError) as context:
-            LabelApprovalJobsService._verify_net_contents_in_milli_litres_or_raise("-100")
+            LabelApprovalJobsService._verify_net_contents_or_raise("-100")
         self.assertIn("positive number", str(context.exception))
 
     def test_verify_net_contents_in_milli_litres_invalid_format(self):
         """Test validation with invalid format"""
         with self.assertRaises(ValueError) as context:
-            LabelApprovalJobsService._verify_net_contents_in_milli_litres_or_raise("abc")
+            LabelApprovalJobsService._verify_net_contents_or_raise("abc")
         self.assertIn("valid number", str(context.exception))
 
     def test_verify_alcohol_content_percentage_valid(self):
@@ -433,7 +433,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
 
         # Verify
         self.assertFalse(response.success)
-        self.assertIn("Invalid net contents in milli litres", response.message)
+        self.assertIn("Invalid net contents", response.message)
         self.assertIsNone(response.job)
 
         # Verify persistence adapter was NOT called

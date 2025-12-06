@@ -12,6 +12,10 @@ from treasury.services.gateways.ttb_api.main.application.models.gql.label_approv
     AddReviewCommentInput,
     AddReviewCommentResponse
 )
+from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.analyze_label_approval_job_input import (
+    AnalyzeLabelApprovalJobInput,
+    AnalyzeLabelApprovalJobResponse
+)
 
 
 @strawberry.type
@@ -37,6 +41,14 @@ class LabelApprovalJobsRelated(MutationsCommon):
     def add_review_comment(self, input: AddReviewCommentInput, info: Info) -> AddReviewCommentResponse:
         """Add a review comment to a label approval job"""
         return MutationsCommon._label_approval_jobs_service.add_review_comment(
+            info=info,
+            input=input
+        )
+
+    @strawberry.mutation  # type: ignore
+    def analyze_label_approval_job(self, input: AnalyzeLabelApprovalJobInput, info: Info) -> AnalyzeLabelApprovalJobResponse:
+        """Analyze label images for a label approval job"""
+        return MutationsCommon._label_approval_jobs_service.analyze_label_approval_job(
             info=info,
             input=input
         )

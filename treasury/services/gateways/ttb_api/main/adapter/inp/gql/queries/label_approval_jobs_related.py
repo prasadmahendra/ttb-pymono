@@ -9,6 +9,10 @@ from treasury.services.gateways.ttb_api.main.application.models.gql.label_approv
     ListLabelApprovalJobsInput,
     ListLabelApprovalJobsResponse
 )
+from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.get_label_approval_job_request import (
+    GetLabelApprovalJobInput,
+    GetLabelApprovalJobResponse
+)
 from treasury.services.gateways.ttb_api.main.application.models.mappers.object_mapper import ObjectMapper
 
 
@@ -20,6 +24,14 @@ class LabelApprovalJobsRelated(QueriesCommon):
         if name:
             return f"Hello, {name}!"
         return "Hello, world!"
+
+    @strawberry.field
+    def get_label_approval_job(self, info: Info, input: GetLabelApprovalJobInput) -> GetLabelApprovalJobResponse:
+        """Get a single label approval job by ID"""
+        return QueriesCommon._label_approval_jobs_service.get_label_approval_job(
+            info=info,
+            input=input
+        )
 
     @strawberry.field
     def list_label_approval_jobs(self, info: Info, input: ListLabelApprovalJobsInput) -> ListLabelApprovalJobsResponse:

@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional
 
 from strawberry.types import Info
@@ -12,6 +13,8 @@ from treasury.services.gateways.ttb_api.main.application.models.domain.label_ext
 from treasury.services.gateways.ttb_api.main.application.models.domain.user import User
 from treasury.services.gateways.ttb_api.main.application.models.dto.label_approval_job_dto import LabelApprovalJobDTO, \
     JobMetadataDTO
+from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.analyze_label_approval_job_input import \
+    AnalyzeLabelApprovalJobInput, AnalyzeLabelApprovalJobResponse
 from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.create_label_approval_job_request import (
     CreateLabelApprovalJobInput,
     CreateLabelApprovalJobResponse
@@ -25,6 +28,10 @@ from treasury.services.gateways.ttb_api.main.application.models.gql.label_approv
 from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.list_label_approval_jobs_request import (
     ListLabelApprovalJobsInput,
     ListLabelApprovalJobsResponse
+)
+from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.get_label_approval_job_request import (
+    GetLabelApprovalJobInput,
+    GetLabelApprovalJobResponse
 )
 from treasury.services.gateways.ttb_api.main.application.models.mappers.object_mapper import ObjectMapper
 from treasury.services.gateways.ttb_api.main.application.usecases.label_data_analysis import \
@@ -103,7 +110,8 @@ class LabelApprovalJobsService:
 
             # Format net_contents to include units if not already present
             net_contents_formatted = input.job_metadata.net_contents
-            if net_contents_formatted and not any(unit in net_contents_formatted for unit in ['mL', 'ml', 'cL', 'cl', 'fl oz', 'fL oz']):
+            if net_contents_formatted and not any(
+                    unit in net_contents_formatted for unit in ['mL', 'ml', 'cL', 'cl', 'fl oz', 'fL oz']):
                 net_contents_formatted = f"{net_contents_formatted} mL"
 
             # Validate input metadata - alcohol content percentage
@@ -128,7 +136,8 @@ class LabelApprovalJobsService:
 
             # Validate input metadata - one image required (jpg, png or gif)
             try:
-                self._verify_label_image_or_raise(input.job_metadata.label_image_base64, permitted_types=["jpg", "png", "gif"])
+                self._verify_label_image_or_raise(input.job_metadata.label_image_base64,
+                                                  permitted_types=["jpg", "png", "gif"])
             except ValueError as ve:
                 return CreateLabelApprovalJobResponse(
                     job=None,
@@ -182,7 +191,7 @@ class LabelApprovalJobsService:
                     message="Failed to create label approval job"
                 )
 
-            job_with_analysis: Optional[LabelApprovalJob] = self.analyze_label_images(created_job)
+            job_with_analysis: Optional[LabelApprovalJob] = self._analyze_label_images(created_job)
             if job_with_analysis is not None:
                 self._label_approval_jobs_persistence_adapter.set_job_metadata(
                     job_id=created_job.id,
@@ -208,7 +217,45 @@ class LabelApprovalJobsService:
                 message=f"Error creating label approval job: {str(e)}"
             )
 
-    def analyze_label_images(
+    def analyze_label_approval_job(
+            self,
+            info: Info,
+            input: AnalyzeLabelApprovalJobInput
+    ) -> AnalyzeLabelApprovalJobResponse:
+
+        job_id: uuid.UUID = input.job_id
+        security_context = SecurityContext.from_info(info)
+        authenticated_entity = security_context.get_authenticated_entity_from_security_ctx()
+
+        job: LabelApprovalJob = self._label_approval_jobs_persistence_adapter.get_approval_job_by_id(
+            job_id=job_id
+        )
+
+        if job is None:
+            return AnalyzeLabelApprovalJobResponse(
+                job=None,
+                success=False,
+                message="Failed to get label approval job"
+            )
+
+        job_with_analysis: Optional[LabelApprovalJob] = self._analyze_label_images(job=job)
+        if job_with_analysis is not None:
+            self._label_approval_jobs_persistence_adapter.set_job_metadata(
+                job_id=job.id,
+                job_metadata=job_with_analysis.get_job_metadata().model_dump(exclude_none=False),
+                updated_by=authenticated_entity
+            )
+
+        # Convert to DTO
+        job_dto: LabelApprovalJobDTO = ObjectMapper.map(job, LabelApprovalJobDTO)
+
+        return AnalyzeLabelApprovalJobResponse(
+            job=job_dto,
+            success=True,
+            message="Label approval job created successfully"
+        )
+
+    def _analyze_label_images(
             self,
             job: LabelApprovalJob
     ) -> Optional[LabelApprovalJob]:
@@ -218,7 +265,6 @@ class LabelApprovalJobsService:
         self._logger.info(f"Analyzing label images for job id {job.id}")
         updated_job: Optional[LabelApprovalJob] = self._label_data_analysis_service.analyze_label_data(job=job)
         return updated_job
-
 
     @classmethod
     def _verify_net_contents_or_raise(cls, net_contents: Optional[str]) -> None:
@@ -474,4 +520,40 @@ class LabelApprovalJobsService:
                 limit=input.limit,
                 success=False,
                 message=f"Error listing label approval jobs: {str(e)}"
+            )
+
+    def get_label_approval_job(
+            self,
+            info: Info,
+            input: 'GetLabelApprovalJobInput'
+    ) -> 'GetLabelApprovalJobResponse':
+        """Get a single label approval job by ID"""
+        try:
+            # Call persistence layer to get job
+            job = self._label_approval_jobs_persistence_adapter.get_approval_job_by_id(
+                job_id=input.job_id
+            )
+
+            if job is None:
+                return GetLabelApprovalJobResponse(
+                    job=None,
+                    success=False,
+                    message=f"Label approval job with ID {input.job_id} not found"
+                )
+
+            # Convert to DTO
+            job_dto: LabelApprovalJobDTO = ObjectMapper.map(job, LabelApprovalJobDTO)
+
+            return GetLabelApprovalJobResponse(
+                job=job_dto,
+                success=True,
+                message="Label approval job retrieved successfully"
+            )
+
+        except Exception as e:
+            self._logger.error(f"Error getting label approval job: {str(e)}")
+            return GetLabelApprovalJobResponse(
+                job=None,
+                success=False,
+                message=f"Error getting label approval job: {str(e)}"
             )

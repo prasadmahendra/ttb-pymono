@@ -44,17 +44,17 @@ class LabelApprovalJobsPersistenceAdapter(PersistenceAdapterBase):
             session.commit()
 
         return self.get_approval_job_by_id(
-            event_id=new_job.id
+            job_id=new_job.id
         )
 
     def get_approval_job_by_id(
             self,
-            event_id: uuid.UUID
+            job_id: uuid.UUID
     ) -> Optional[LabelApprovalJob]:
-        """Get an event by event_id"""
+        """Get an event by job_id"""
         with Session(self._orm_engine, expire_on_commit=False, autocommit=False) as session:
             result = session.query(LabelApprovalJob).filter(
-                LabelApprovalJob.id == event_id  # type: ignore
+                LabelApprovalJob.id == job_id  # type: ignore
             ).first()
             return self._ensure_job_metadata_deserialized(result)
 
@@ -83,7 +83,7 @@ class LabelApprovalJobsPersistenceAdapter(PersistenceAdapterBase):
 
             session.commit()
 
-        return self.get_approval_job_by_id(event_id=job_id)
+        return self.get_approval_job_by_id(job_id=job_id)
 
     def set_job_metadata(
             self,
@@ -110,7 +110,7 @@ class LabelApprovalJobsPersistenceAdapter(PersistenceAdapterBase):
 
             session.commit()
 
-        return self.get_approval_job_by_id(event_id=job_id)
+        return self.get_approval_job_by_id(job_id=job_id)
 
     def list_approval_jobs(
             self,

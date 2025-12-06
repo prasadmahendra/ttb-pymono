@@ -15,6 +15,9 @@ from treasury.services.gateways.ttb_api.main.application.models.gql.label_approv
     SetLabelApprovalJobStatusResponse,
     AddReviewCommentResponse
 )
+from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.analyze_label_approval_job_input import (
+    AnalyzeLabelApprovalJobResponse
+)
 from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs import \
     LabelApprovalJobsService
 from treasury.services.gateways.ttb_api.test.testing.base_api_service_test_case import BaseApiServiceTestCase
@@ -853,3 +856,119 @@ class TestMutationsLabelApprovalJobsRelated(BaseApiServiceTestCase):
 
         # Verify service was called
         MutationsCommon._label_approval_jobs_service.add_review_comment.assert_called_once()
+
+    def test_analyze_label_approval_job_success(self) -> None:
+        """Test successful analysis of label approval job"""
+        # Mock the service response
+        MutationsCommon._label_approval_jobs_service.analyze_label_approval_job.return_value = AnalyzeLabelApprovalJobResponse(
+            job=self._test_job_dto,
+            success=True,
+            message="Label approval job created successfully"
+        )
+
+        mutation = """
+        mutation AnalyzeLabelApprovalJob($input: AnalyzeLabelApprovalJobInput!) {
+            analyzeLabelApprovalJob(input: $input) {
+                success
+                message
+                job {
+                    id
+                    brandName
+                    productClass
+                    status
+                    jobMetadata {
+                        reviewerId
+                        reviewerName
+                        reviewComments
+                    }
+                }
+            }
+        }
+        """
+
+        variables = {
+            "input": {
+                "jobId": str(self._test_job_id)
+            }
+        }
+
+        # Execute GraphQL mutation
+        response = self.post(
+            "/graphql",
+            json={"query": mutation, "variables": variables}
+        )
+
+        # Verify response
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertIn("data", result)
+        data = result["data"]
+
+        analyze_response = data["analyzeLabelApprovalJob"]
+        self.assertIsNotNone(analyze_response)
+        self.assertTrue(analyze_response.get("success"))
+        self.assertEqual(analyze_response.get("message"), "Label approval job created successfully")
+
+        job = analyze_response.get("job")
+        self.assertIsNotNone(job)
+        self.assertEqual(job.get("id"), str(self._test_job_id))
+        self.assertEqual(job.get("brandName"), str(self._test_brand_name))
+        self.assertEqual(job.get("productClass"), "spirits")
+        self.assertEqual(job.get("status"), "pending")
+
+        # Verify job metadata
+        job_metadata = job.get("jobMetadata")
+        self.assertIsNotNone(job_metadata)
+        self.assertEqual(job_metadata.get("reviewerId"), "reviewer_123")
+        self.assertEqual(job_metadata.get("reviewerName"), "John Doe")
+
+        # Verify service was called
+        MutationsCommon._label_approval_jobs_service.analyze_label_approval_job.assert_called_once()
+
+    def test_analyze_label_approval_job_not_found(self) -> None:
+        """Test analysis of non-existent job"""
+        # Mock the service response with failure
+        MutationsCommon._label_approval_jobs_service.analyze_label_approval_job.return_value = AnalyzeLabelApprovalJobResponse(
+            job=None,
+            success=False,
+            message="Failed to get label approval job"
+        )
+
+        mutation = """
+        mutation AnalyzeLabelApprovalJob($input: AnalyzeLabelApprovalJobInput!) {
+            analyzeLabelApprovalJob(input: $input) {
+                success
+                message
+                job {
+                    id
+                }
+            }
+        }
+        """
+
+        variables = {
+            "input": {
+                "jobId": str(self._test_job_id)
+            }
+        }
+
+        # Execute GraphQL mutation
+        response = self.post(
+            "/graphql",
+            json={"query": mutation, "variables": variables}
+        )
+
+        # Verify response
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertIn("data", result)
+        data = result["data"]
+
+        analyze_response = data["analyzeLabelApprovalJob"]
+        self.assertIsNotNone(analyze_response)
+        self.assertFalse(analyze_response.get("success"))
+        self.assertEqual(analyze_response.get("message"), "Failed to get label approval job")
+        self.assertIsNone(analyze_response.get("job"))
+
+        # Verify service was called
+        MutationsCommon._label_approval_jobs_service.analyze_label_approval_job.assert_called_once()

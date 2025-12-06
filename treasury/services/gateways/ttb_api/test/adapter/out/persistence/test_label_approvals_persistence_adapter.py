@@ -123,7 +123,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         created_job = self.adapter.create_approval_job(job=job, created_by=created_by)
         self.assertIsNotNone(created_job)
 
-        retrieved_job = self.adapter.get_approval_job_by_id(event_id=created_job.id)
+        retrieved_job = self.adapter.get_approval_job_by_id(job_id=created_job.id)
 
         self.assertIsNotNone(retrieved_job)
         self.assertEqual(retrieved_job.id, created_job.id)
@@ -139,7 +139,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         """Test retrieving a non-existent approval job by ID (should return None)"""
         non_existent_id = uuid.uuid4()
 
-        result = self.adapter.get_approval_job_by_id(event_id=non_existent_id)
+        result = self.adapter.get_approval_job_by_id(job_id=non_existent_id)
 
         self.assertIsNone(result)
 
@@ -238,7 +238,7 @@ class TestLabelApprovalJobsPersistenceAdapter(unittest.TestCase):
         self.assertEqual(metadata_obj.review_comments, ["Looks good", LabelApprovalStatus.approved])
 
         # Verify by retrieving the job
-        retrieved = self.adapter.get_approval_job_by_id(event_id=result.id)
+        retrieved = self.adapter.get_approval_job_by_id(job_id=result.id)
         retrieved_metadata = retrieved.get_job_metadata()
         self.assertIsInstance(retrieved_metadata, JobMetadata)
         self.assertEqual(retrieved_metadata.reviewer_id, "reviewer_123")

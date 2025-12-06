@@ -8,6 +8,9 @@ from treasury.services.gateways.ttb_api.main.application.models.dto.label_approv
 from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.list_label_approval_jobs_request import (
     ListLabelApprovalJobsResponse
 )
+from treasury.services.gateways.ttb_api.main.application.models.gql.label_approvals.get_label_approval_job_request import (
+    GetLabelApprovalJobResponse
+)
 from treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs import \
     LabelApprovalJobsService
 from treasury.services.gateways.ttb_api.test.testing.base_api_service_test_case import BaseApiServiceTestCase
@@ -258,4 +261,120 @@ class TestQueriesLabelApprovalJobsRelated(BaseApiServiceTestCase):
         self.assertTrue(list_jobs_response["success"])
         self.assertEqual(len(list_jobs_response["jobs"]), 0)
         self.assertEqual(list_jobs_response["totalCount"], 0)
+
+    def test_get_job_success(self):
+        """Test successfully getting a single label approval job by ID"""
+        # Create mock job
+        test_job_id = uuid.uuid4()
+        mock_job = self._create_mock_job_dto(brand_name="Budweiser", status="approved")
+        mock_job.id = test_job_id
+
+        # Mock service response
+        mock_response = GetLabelApprovalJobResponse(
+            job=mock_job,
+            success=True,
+            message="Label approval job retrieved successfully"
+        )
+        QueriesCommon._label_approval_jobs_service.get_label_approval_job.return_value = mock_response
+
+        # GraphQL query
+        query = """
+            query GetJob($input: GetLabelApprovalJobInput!) {
+                getLabelApprovalJob(input: $input) {
+                    job {
+                        id
+                        brandName
+                        productClass
+                        status
+                        jobMetadata {
+                            reviewerId
+                            reviewerName
+                            reviewComments
+                        }
+                    }
+                    success
+                    message
+                }
+            }
+        """
+
+        variables = {
+            "input": {
+                "jobId": str(test_job_id)
+            }
+        }
+
+        # Execute query
+        response = self.post("/graphql", json={"query": query, "variables": variables})
+
+        # Verify response
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("data", data)
+        get_job_response = data["data"]["getLabelApprovalJob"]
+        self.assertTrue(get_job_response["success"])
+        self.assertEqual(get_job_response["message"], "Label approval job retrieved successfully")
+
+        job = get_job_response["job"]
+        self.assertIsNotNone(job)
+        self.assertEqual(job["id"], str(test_job_id))
+        self.assertEqual(job["brandName"], "Budweiser")
+        self.assertEqual(job["productClass"], "beer")
+        self.assertEqual(job["status"], "approved")
+
+        # Verify job metadata
+        job_metadata = job["jobMetadata"]
+        self.assertIsNotNone(job_metadata)
+        self.assertEqual(job_metadata["reviewerId"], "reviewer_123")
+        self.assertEqual(job_metadata["reviewerName"], "Test Reviewer")
+
+        # Verify service was called
+        QueriesCommon._label_approval_jobs_service.get_label_approval_job.assert_called_once()
+
+    def test_get_job_not_found(self):
+        """Test getting a label approval job that doesn't exist"""
+        # Non-existent job ID
+        non_existent_id = uuid.uuid4()
+
+        # Mock service response with failure
+        mock_response = GetLabelApprovalJobResponse(
+            job=None,
+            success=False,
+            message=f"Label approval job with ID {non_existent_id} not found"
+        )
+        QueriesCommon._label_approval_jobs_service.get_label_approval_job.return_value = mock_response
+
+        # GraphQL query
+        query = """
+            query GetJob($input: GetLabelApprovalJobInput!) {
+                getLabelApprovalJob(input: $input) {
+                    job {
+                        id
+                    }
+                    success
+                    message
+                }
+            }
+        """
+
+        variables = {
+            "input": {
+                "jobId": str(non_existent_id)
+            }
+        }
+
+        # Execute query
+        response = self.post("/graphql", json={"query": query, "variables": variables})
+
+        # Verify response
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("data", data)
+        get_job_response = data["data"]["getLabelApprovalJob"]
+        self.assertFalse(get_job_response["success"])
+        self.assertIn("not found", get_job_response["message"])
+        self.assertIsNone(get_job_response["job"])
+
+        # Verify service was called
+        QueriesCommon._label_approval_jobs_service.get_label_approval_job.assert_called_once()
 
