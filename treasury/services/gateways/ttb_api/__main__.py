@@ -23,8 +23,12 @@ def bootstrap_test_data() -> None:
     orm_engine = DbConfig.get_orm_engine(local_on_disk=True)
     SQLModel.metadata.create_all(bind=orm_engine)
 
-if __name__ == "__main__":
+def main() -> None:
+    """Main entry point for the GraphQL API service"""
     logger.info("[starting] service")
     bootstrap_test_data()
-    FlaskConfig.serve("__main__:app", port=8080, workers=4)
+    FlaskConfig.serve("treasury.services.gateways.ttb_api.__main__:app", port=8080, workers=4)
     logger.info("[exiting] service")
+
+if __name__ == "__main__":
+    main()
