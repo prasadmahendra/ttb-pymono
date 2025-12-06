@@ -19,6 +19,14 @@ class DbConfig:
     _logger = GlobalConfig.get_logger(__name__)
 
     @classmethod
+    def bootstrap_test_data(cls, orm_engine) -> None:
+        # FIXME: only for testing - create tables if not exist
+        # We'd never do this in production code. This is just to make it easier to run locally
+        # and for this coding example.
+        cls._logger.info("[SQLModel] create_all")
+        SQLModel.metadata.create_all(bind=orm_engine)
+
+    @classmethod
     def get_orm_engine(
             cls,
             in_memory: bool = False, # default to in_memory for this coding exercise purposes only
@@ -44,6 +52,7 @@ class DbConfig:
                 pool_recycle=3600,
                 pool_size=5
             )
+            cls.bootstrap_test_data(engine)
         elif in_memory:
             engine: Engine = create_engine(
                 "sqlite:///:memory:",

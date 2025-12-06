@@ -16,14 +16,6 @@ load_dotenv()
 logger = GlobalConfig.get_logger(__name__)
 app: Starlette = ApiServiceConfig.app_init(security_context_factory=SecurityContextFactory())
 
-def bootstrap_test_data() -> None:
-    # FIXME: only for testing - create tables if not exist
-    # We'd never do this in production code. This is just to make it easier to run locally
-    # and for this coding example.
-    orm_engine = DbConfig.get_orm_engine(local_on_disk=True)
-    logger.info("[SQLModel] create_all")
-    SQLModel.metadata.create_all(bind=orm_engine)
-
 def main() -> None:
     """Main entry point for the GraphQL API service"""
     logger.info("[starting] service")
@@ -31,5 +23,4 @@ def main() -> None:
     logger.info("[exiting] service")
 
 if __name__ == "__main__":
-    bootstrap_test_data()
     main()
