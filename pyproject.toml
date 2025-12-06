@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
+
+[project.scripts]
+app = "treasury.services.gateways.ttb_api.__main__:main"
+
 dependencies = [
     "boto3>=1.40.73",
     "email-validator>=2.3.0",
