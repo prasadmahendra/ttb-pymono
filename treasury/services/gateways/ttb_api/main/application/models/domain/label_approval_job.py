@@ -42,7 +42,7 @@ class LabelImageAnalysisResult(BaseModel):
     # standardized text about pregnancy and driving) . For simplicity, you can at least check that the
     # phrase “GOVERNMENT WARNING” appears on the label image text (and possibly that some portion
     # of the warning text is present). This can be a bonus feature if you have time.
-    health_warning_found: bool = False
+    health_warning_found: Optional[bool] = None
     health_warning_found_results_reasoning: Optional[str] = None
 
 

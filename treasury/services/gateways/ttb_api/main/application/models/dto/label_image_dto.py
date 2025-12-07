@@ -22,7 +22,7 @@ class LabelImageAnalysisResultDTO:
     alcohol_content_found_results_reasoning: Optional[str] = None
     net_contents_found: bool = False
     net_contents_found_results_reasoning: Optional[str] = None
-    health_warning_found: bool = False
+    health_warning_found: Optional[bool] = None
     health_warning_found_results_reasoning: Optional[str] = None
 
 
