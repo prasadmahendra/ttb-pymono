@@ -4,7 +4,7 @@ A Treasury Label Approval Management API built with Clean Architecture principle
 
 ## Table of Contents
 - [Clean Architecture Overview](#clean-architecture-overview)
-- [Folder Structure](#folder-structure)
+- [Folder Structure](#folder-structure)[README (1).md](../../../Downloads/README%20%281%29.md)
 - [Adapters](#adapters)
 - [Use Cases](#use-cases)
 - [Data Flow](#data-flow)
@@ -208,12 +208,12 @@ Analyzes label images for regulatory compliance.
 
 **Analysis Modes:**
 - **LLM Mode:** Uses OpenAI GPT for intelligent analysis
-- **OCR Mode:** Uses Tesseract for text-based verification
+- **OCR Mode:** Uses Tesseract for text-based verification (Implementation pending)
 
 **Methods:**
 - `analyze_label_data()` - Comprehensive compliance check
 - `_analyze_with_llm()` - AI-powered analysis
-- `_analyze_with_ocr()` - OCR-based analysis
+- `_analyze_with_ocr()` - OCR-based analysis (Implementation pending)
 
 ### 3. LabelDataExtractionService
 
@@ -344,7 +344,7 @@ Updated Job with Analysis
 5. **DTO Pattern** - Separate domain models from API models
 6. **Security Context** - Request-scoped security information
 7. **Error Boundaries** - Custom error handlers at framework level
-
+[README (1).md](../../../Downloads/README%20%281%29.md)
 ## Technology Stack
 
 - **API Framework:** FastAPI/Starlette with GraphQL (Strawberry)
