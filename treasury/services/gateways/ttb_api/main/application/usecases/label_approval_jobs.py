@@ -137,7 +137,7 @@ class LabelApprovalJobsService:
             # Validate input metadata - one image required (jpg, png or gif)
             try:
                 self._verify_label_image_or_raise(input.job_metadata.label_image_base64,
-                                                  permitted_types=["jpg", "png", "gif"])
+                                                  permitted_types=["jpg", "png", "gif", "jpeg"])
             except ValueError as ve:
                 return CreateLabelApprovalJobResponse(
                     job=None,
@@ -301,14 +301,14 @@ class LabelApprovalJobsService:
         if value < 0 or value > 100:
             raise ValueError("Alcohol content percentage must be between 0% and 100%")
 
-    @classmethod
-    def _verify_label_image_or_raise(cls, label_image_base64: str, permitted_types: list[str]) -> None:
+    def _verify_label_image_or_raise(self, label_image_base64: str, permitted_types: list[str]) -> None:
         """Verify that the label image is provided and is of a permitted type (e.g., jpg, png, gif)"""
         if not label_image_base64:
             raise ValueError("Label image is required")
 
         # Simple check for permitted types in base64 string
         if not any(label_image_base64.startswith(f"data:image/{img_type};base64,") for img_type in permitted_types):
+            self._logger.info(f"Label image type not permitted. Provided image base64 starts with: img_type={label_image_base64[:30]}...")
             raise ValueError(f"Label image must be one of the following types: {', '.join(permitted_types)}")
 
     @classmethod
