@@ -8,12 +8,20 @@ from treasury.services.gateways.ttb_api.main.application.config.config import Gl
 
 
 class DbConfig:
-    _aws_region = config.AWS_REGION_DEFAULT or "us-west-2"
-    _postgres_user = config.AWS_AURORA_PSQL_USER or "my_db_user"
-    _postgres_host = config.AWS_AURORA_PSQL_HOST or "127.0.0.1"
-    _postgres_db = config.AWS_AURORA_PSQL_DBNAME or "main"
+
+
+    _postgres_user = config.PGUSER or "my_db_user"
+    _postgres_host = config.PGHOST or "127.0.0.1"
+    _postgres_db = config.PGDATABASE or "neondb"
     _postgres_port = config.AWS_AURORA_PSQL_PORT or "5432"
-    _postgres_password = config.AWS_AURORA_PSQL_PASSWORD or ""
+    _postgres_password = config.PGPASSWORD or ""
+
+    # # Parameters for constructing your own connection string
+    # PGHOST=ep-curly-sunset-a4i2ngj5-pooler.us-east-1.aws.neon.tech
+    # PGHOST_UNPOOLED=ep-curly-sunset-a4i2ngj5.us-east-1.aws.neon.tech
+    # PGUSER=neondb_owner
+    # PGDATABASE=neondb
+    # PGPASSWORD=npg_XhRATGBog0f4
 
     _orm_engine_cache = {}
     _logger = GlobalConfig.get_logger(__name__)
@@ -30,7 +38,7 @@ class DbConfig:
     def get_orm_engine(
             cls,
             in_memory: bool = False, # default to in_memory for this coding exercise purposes only
-            local_on_disk: bool = True,  # # FIXME: for testing purposes only!
+            local_on_disk: bool = False,
             local_db_file_name: str = "treasury_db_local.db"  # for testing purposes only!
     ) -> Engine:
 

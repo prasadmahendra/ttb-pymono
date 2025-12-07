@@ -139,7 +139,7 @@ class LabelApprovalJobsPersistenceAdapter(PersistenceAdapterBase):
             if brand_name_like:
                 # Convert UUID to string for LIKE comparison
                 query = query.filter(
-                    func.cast(LabelApprovalJob.brand_name, String).like(f"%{brand_name_like}%")
+                    LabelApprovalJob.brand_name.ilike(f"%{brand_name_like}%")
                 )
 
             # Apply status filter
