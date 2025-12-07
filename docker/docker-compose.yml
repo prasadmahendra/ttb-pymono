@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: pymono:latest
+    container_name: pymono-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - ../.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICE_NAME=api
+    volumes:
+      - ../logs:/app/logs
+    command: ["treasury/services/gateways/ttb_api/__main__.py"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - pymono-network
+
+  # Add more services here as needed
+  # worker:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/Dockerfile
+  #   image: pymono:latest
+  #   container_name: pymono-worker
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ../.env
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - SERVICE_NAME=worker
+  #   volumes:
+  #     - ../logs:/app/logs
+  #   command: ["treasury/services/workers/__main__.py"]
+  #   networks:
+  #     - pymono-network
+
+networks:
+  pymono-network:
+    driver: bridge
+
+volumes:
+  logs:
+    driver: local
