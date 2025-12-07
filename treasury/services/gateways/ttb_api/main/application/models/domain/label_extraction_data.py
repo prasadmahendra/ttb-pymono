@@ -23,7 +23,7 @@ class ProductInfoStrict(BaseModel):
     # Matches “700 mL”, “70 cL”, “12 fl oz”
     net_contents: Optional[str] = Field(
         default=None,
-        pattern=r"^\d+(\.\d+)?\s?(mL|ml|cL|cl|fl oz|fL oz)$",
+        pattern=r"^\d+(\.\d+)?\s?(mL|ml|cL|cl|fl oz|fl\. oz\.|fL oz|fL\. oz\.)$",
         description="Net contents with unit, e.g. '700 mL'"
     )
 

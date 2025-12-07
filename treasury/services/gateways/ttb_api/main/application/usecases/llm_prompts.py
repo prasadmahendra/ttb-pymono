@@ -38,6 +38,8 @@ Return only the exact text found on the label for each field, without any additi
 Do not include any fields that are not specified in the interfaces. 
 Do not add any extra formatting, markdown, or code blocks.
 Do not convert units; use the units as they appear on the label.
+Units must be either mL, cL, fl oz or gal.
+Units may have a period after "oz" (e.g., "fl. oz."). Remove the periods when returning the value.
 
 Provide the final output as a JSON object that adheres strictly to the BrandDataStrict interface.
 """
