@@ -358,7 +358,7 @@ class LabelApprovalJobsService:
 
             # Fetch the existing job
             existing_job = self._label_approval_jobs_persistence_adapter.get_approval_job_by_id(
-                event_id=input.job_id
+                job_id=input.job_id
             )
 
             if existing_job is None:
@@ -435,7 +435,7 @@ class LabelApprovalJobsService:
 
             # Fetch the existing job
             existing_job = self._label_approval_jobs_persistence_adapter.get_approval_job_by_id(
-                event_id=input.job_id
+                job_id=input.job_id
             )
 
             if existing_job is None:

@@ -762,7 +762,7 @@ class TestLabelApprovalJobsServiceSetStatus(unittest.TestCase):
         self.assertIsNotNone(response.job)
 
         # Verify persistence adapter was called
-        self.mock_persistence_adapter.get_approval_job_by_id.assert_called_once_with(event_id=self.test_job_id)
+        self.mock_persistence_adapter.get_approval_job_by_id.assert_called_once_with(job_id=self.test_job_id)
         self.mock_persistence_adapter.set_job_status.assert_called_once()
         self.mock_persistence_adapter.set_job_metadata.assert_called_once()
 
@@ -973,7 +973,7 @@ class TestLabelApprovalJobsServiceAddComment(unittest.TestCase):
         self.assertIsNotNone(response.job)
 
         # Verify persistence adapter was called
-        self.mock_persistence_adapter.get_approval_job_by_id.assert_called_once_with(event_id=self.test_job_id)
+        self.mock_persistence_adapter.get_approval_job_by_id.assert_called_once_with(job_id=self.test_job_id)
         self.mock_persistence_adapter.set_job_metadata.assert_called_once()
 
     @patch('treasury.services.gateways.ttb_api.main.application.usecases.label_approval_jobs.SecurityContext')
