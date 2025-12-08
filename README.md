@@ -58,7 +58,7 @@ treasury/services/gateways/ttb_api/main/
 │   └── out/                           # Output Adapters (Outbound Ports)
 │       ├── persistence/               # Database adapter
 │       ├── llm/                       # OpenAI LLM adapter
-│       └── ocr/                       # Tesseract OCR adapter
+│       └── ocr/                       # Tesseract OCR adapter (used for experimentation, not used in current version)
 │
 ├── application/                       # Application & Domain Layers
 │   ├── usecases/                      # Use Cases (Business Logic)
@@ -155,7 +155,7 @@ Integrates with OpenAI API for AI-powered label analysis and data extraction.
 
 **File:** `ocr/ocr_adapter.py`
 
-Uses Tesseract OCR for text extraction from images.
+Uses Tesseract OCR for text extraction from images  (not used in current version. This was just me experimenting a bit).
 
 **Methods:**
 - `extract_text_from_url(image_url)` - OCR from image URL
@@ -208,12 +208,12 @@ Analyzes label images for regulatory compliance.
 
 **Analysis Modes:**
 - **LLM Mode:** Uses OpenAI GPT for intelligent analysis
-- **OCR Mode:** Uses Tesseract for text-based verification (Implementation pending)
+- **OCR Mode:** Uses Tesseract for text-based verification (used for experimentation, not used in current version)
 
 **Methods:**
 - `analyze_label_data()` - Comprehensive compliance check
 - `_analyze_with_llm()` - AI-powered analysis
-- `_analyze_with_ocr()` - OCR-based analysis (Implementation pending)
+- `_analyze_with_ocr()` - OCR-based analysis (used for experimentation, not used in current version)
 
 ### 3. LabelDataExtractionService
 
@@ -285,7 +285,6 @@ Manages request security and authentication context.
 5. Output Adapters
    ├── Persistence Adapter → PostgreSQL
    ├── LLM Adapter → OpenAI
-   └── OCR Adapter → Tesseract
    ↓
 6. Response DTO
    ├── Map domain objects
@@ -324,9 +323,6 @@ LabelApprovalJobsService.analyze_label_approval_job()
 LabelDataAnalysisService.analyze_label_data()
     ├──→ LLMAdapter.complete_prompt_with_media()
     │    └──→ OpenAI API
-    │
-    └──→ OCRAdapter.extract_text_from_url()
-         └──→ Tesseract OCR
     ↓
 Analysis Results (compliance checks)
     ↓
@@ -350,6 +346,5 @@ Updated Job with Analysis
 - **API Framework:** FastAPI/Starlette with GraphQL (Strawberry)
 - **Database:** PostgreSQL with SQLAlchemy/SQLModel ORM
 - **LLM:** OpenAI API (GPT-4o, GPT-5)
-- **OCR:** Tesseract
 - **Validation:** Pydantic
 - **Server:** Gunicorn/Uvicorn with Uvloop
