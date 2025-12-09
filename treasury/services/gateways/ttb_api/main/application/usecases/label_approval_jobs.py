@@ -305,8 +305,7 @@ class LabelApprovalJobsService:
         if value < 0 or value > 100:
             raise ValueError("Alcohol content percentage must be between 0% and 100%")
 
-    @classmethod
-    def _verify_label_image_or_raise(cls, label_image_base64: str, permitted_types: list[str]) -> None:
+    def _verify_label_image_or_raise(self, label_image_base64: str, permitted_types: list[str]) -> None:
         """Verify that the label image is provided and is of a permitted type (e.g., jpg, png, gif)"""
         if not label_image_base64:
             raise ValueError("Label image is required")
@@ -362,7 +361,8 @@ class LabelApprovalJobsService:
             raise
         except Exception as e:
             # Catch all other exceptions (base64 decode errors, PIL errors, etc.)
-            raise ValueError(f"Invalid or corrupted image: {str(e)}")
+            self._logger.exception(f"Error verifying label image: {str(e)}")
+            raise ValueError(f"Invalid or corrupted image")
 
     @classmethod
     def _create_label_images_list_from_base64(cls, label_image_base64: str) -> list[LabelImage]:
