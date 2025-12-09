@@ -42,6 +42,7 @@ from treasury.services.gateways.ttb_api.main.application.usecases.label_data_ana
 from treasury.services.gateways.ttb_api.main.application.usecases.security.security_context import SecurityContext
 from treasury.services.gateways.ttb_api.main.application.usecases.user_management import UserManagementService
 
+MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 class LabelApprovalJobsService:
     def __init__(
@@ -351,6 +352,10 @@ class LabelApprovalJobsService:
             # Check that the image has valid dimensions
             if image.width <= 0 or image.height <= 0:
                 raise ValueError("Image has invalid dimensions")
+
+            # bytes data length check
+            if len(image_data) > MAX_IMAGE_SIZE_BYTES:
+                raise ValueError("Image data exceeds maximum allowed size of 10 MB")
 
         except ValueError:
             # Re-raise ValueError with our message
