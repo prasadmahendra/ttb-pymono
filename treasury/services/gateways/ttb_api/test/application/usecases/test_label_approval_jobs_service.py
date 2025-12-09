@@ -292,7 +292,9 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -336,7 +338,9 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         # User not found
@@ -380,7 +384,9 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -423,7 +429,9 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -466,7 +474,9 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -500,7 +510,9 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -533,11 +545,14 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         # Raise an exception
-        self.mock_user_management_service.get_user_by_authenticated_entity.side_effect = Exception("Database connection error")
+        self.mock_user_management_service.get_user_by_authenticated_entity.side_effect = Exception(
+            "Database connection error")
 
         # Execute
         response = self.service.create_label_approval_job(info=mock_info, input=test_input)
@@ -561,7 +576,7 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
             product_class='beer',
             alcohol_content_abv='5%',
             net_contents='355',
-            label_image_base64='data:image/png;base64,test'
+            label_image_base64='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
         )
         test_input = self._create_test_input(job_metadata=job_metadata_input)
 
@@ -575,7 +590,9 @@ class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -731,7 +748,9 @@ class TestLabelApprovalJobsServiceSetStatus(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -787,7 +806,9 @@ class TestLabelApprovalJobsServiceSetStatus(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -824,7 +845,9 @@ class TestLabelApprovalJobsServiceSetStatus(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -944,7 +967,9 @@ class TestLabelApprovalJobsServiceAddComment(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -997,7 +1022,9 @@ class TestLabelApprovalJobsServiceAddComment(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -1034,7 +1061,9 @@ class TestLabelApprovalJobsServiceAddComment(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         self.mock_user_management_service.get_user_by_authenticated_entity.return_value = mock_user
@@ -1148,7 +1177,9 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         # Mock persistence adapter to return jobs
@@ -1193,7 +1224,9 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         # Mock persistence adapter to return filtered jobs
@@ -1234,7 +1267,9 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         # Mock persistence adapter to return filtered jobs
@@ -1275,7 +1310,9 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         # Mock persistence adapter to return jobs
@@ -1318,7 +1355,9 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         # Mock persistence adapter to return empty list
@@ -1346,7 +1385,9 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
         def role_permissions_required_decorator(permissions):
             def decorator(func):
                 return func
+
             return decorator
+
         mock_security_ctx_instance.role_permissions_required = role_permissions_required_decorator
 
         # Raise an exception
@@ -1361,6 +1402,17 @@ class TestLabelApprovalJobsServiceListJobs(unittest.TestCase):
         self.assertIn("Database connection error", response.message)
         self.assertEqual(len(response.jobs), 0)
         self.assertEqual(response.total_count, 0)
+
+    def test_verify_label_image_or_raise_corrupted_image(self) -> None:
+        """Test that corrupted/truncated images are rejected"""
+        # This is a truncated JPEG image that should fail validation
+        corrupted_image = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9/9oACAEBAAA/APvV/9k="
+        with self.assertRaises(ValueError) as context:
+            self.service._verify_label_image_or_raise(
+                label_image_base64=corrupted_image,
+                permitted_types=["jpg", "png", "gif", "jpeg"]
+            )
+        self.assertIn("Invalid or corrupted image", str(context.exception))
 
 
 if __name__ == '__main__':

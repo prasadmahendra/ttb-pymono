@@ -1,6 +1,9 @@
+import base64
 import uuid
+from io import BytesIO
 from typing import Optional
 
+from PIL import Image
 from strawberry.types import Info
 
 from treasury.services.gateways.ttb_api.main.adapter.out.persistence.label_approvals_persistence_adapter import \
@@ -312,6 +315,49 @@ class LabelApprovalJobsService:
             logger = GlobalConfig.get_logger(__name__)
             logger.info(f"Label image type not permitted. Provided image base64 starts with: img_type={label_image_base64[:30]}...")
             raise ValueError(f"Label image must be one of the following types: {', '.join(permitted_types)}")
+
+        # Extract and verify the actual image contents
+        try:
+            # Extract the base64 data (remove the data URI prefix)
+            if ',' in label_image_base64:
+                base64_data = label_image_base64.split(',', 1)[1]
+            else:
+                raise ValueError("Invalid base64 image format")
+
+            # Decode the base64 string
+            image_data = base64.b64decode(base64_data, validate=True)
+
+            if len(image_data) == 0:
+                raise ValueError("Image data is empty")
+
+            # Try to open and verify the image
+            image = Image.open(BytesIO(image_data))
+
+            # Verify that this is indeed a valid image
+            image.verify()
+
+            # Re-open the image to check the format (verify() closes the file)
+            image = Image.open(BytesIO(image_data))
+            image_format = image.format.lower() if image.format else None
+
+            # Normalize permitted types (jpg -> jpeg for comparison with PIL format)
+            normalized_permitted_types = [t.lower().replace('jpg', 'jpeg') for t in permitted_types]
+            if 'jpeg' in normalized_permitted_types and 'jpg' not in [t.lower() for t in permitted_types]:
+                normalized_permitted_types.append('jpg')
+
+            if image_format not in normalized_permitted_types:
+                raise ValueError(f"Image format {image_format} does not match declared type in data URI")
+
+            # Check that the image has valid dimensions
+            if image.width <= 0 or image.height <= 0:
+                raise ValueError("Image has invalid dimensions")
+
+        except ValueError:
+            # Re-raise ValueError with our message
+            raise
+        except Exception as e:
+            # Catch all other exceptions (base64 decode errors, PIL errors, etc.)
+            raise ValueError(f"Invalid or corrupted image: {str(e)}")
 
     @classmethod
     def _create_label_images_list_from_base64(cls, label_image_base64: str) -> list[LabelImage]:
