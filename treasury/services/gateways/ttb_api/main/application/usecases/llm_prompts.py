@@ -40,6 +40,8 @@ Do not add any extra formatting, markdown, or code blocks.
 Do not convert units; use the units as they appear on the label.
 Units must be either mL, cL, fl oz or gal.
 Units may have a period after "oz" (e.g., "fl. oz."). Remove the periods when returning the value.
+If there is more than one type of product on the label or if there are multiple labels for different products, then leave all values as unknown or null as
+appropriate. 
 
 Provide the final output as a JSON object that adheres strictly to the BrandDataStrict interface.
 """
