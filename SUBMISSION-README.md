@@ -1,5 +1,4 @@
-﻿
-# AI-Powered Alcohol Label Verification App  
+﻿# AI-Powered Alcohol Label Verification App  
   
 > A full-stack web application that simulates the TTB (Alcohol and Tobacco Tax and Trade Bureau) label approval process using AI-powered OCR to verify alcohol beverage labels against submitted application data.  
   
@@ -145,6 +144,10 @@ The backend supports two configurable analysis modes via the `analysis_mode` par
 |------|-------|-------------|
 | **OpenAI (Default)** | `using_llm` | Uses GPT for intelligent, context-aware label analysis |
 | **Pytesseract** | `pytesseract` | Uses Tesseract OCR for faster, rule-based text verification |
+
+**Case Sensitivity Rules (for pytesseract mode):**
+- Brand name, product class, alcohol content, net contents: **case-insensitive** (e.g., "STONE'S THROW" matches "Stone's Throw")
+- Government Warning: **ONLY field requiring ALL CAPS** ("GOVERNMENT WARNING" must be exact)
 
 The `analysis_mode` can be set when creating a job (persisted to the database) or overridden during ad-hoc analysis runs (not persisted).
 
