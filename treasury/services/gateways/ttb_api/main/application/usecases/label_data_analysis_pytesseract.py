@@ -92,19 +92,19 @@ class LabelDataAnalysisPytesseractService:
         if not given_brand_info:
             return result
 
-        # 1. Check brand name - exact match (case-insensitive)
+        # 1. Check brand name - case-insensitive match (e.g., "STONE'S THROW" matches "Stone's Throw")
         if given_brand_info.brand_name:
             brand_name_lower = given_brand_info.brand_name.lower()
             brand_name_found = brand_name_lower in extracted_text_lower
             result.brand_name_found = brand_name_found
             if brand_name_found:
                 result.brand_name_found_results_reasoning = (
-                    f"The brand name '{given_brand_info.brand_name}' was found on the label using OCR text extraction."
+                    f"The brand name '{given_brand_info.brand_name}' was found on the label (case-insensitive match) using OCR text extraction."
                 )
             else:
                 result.brand_name_found_results_reasoning = (
                     f"The form specifies a brand name of '{given_brand_info.brand_name}', but the OCR extracted label data "
-                    f"does not contain this text, indicating the brand name was not found on the label."
+                    f"does not contain this text (case-insensitive search), indicating the brand name was not found on the label."
                 )
 
         # Check product info from first product

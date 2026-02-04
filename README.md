@@ -201,12 +201,12 @@ Main orchestration service for managing label approval workflows.
 
 Analyzes label images for regulatory compliance. Supports two analysis modes that can be configured per job.
 
-**Analysis Checks:**
-1. **Brand Name Verification** - Confirms brand name is visible
-2. **Product Class/Type** - Validates product classification (with fuzzy matching for related types)
-3. **Alcohol Content Format** - Checks ABV percentage display
-4. **Net Contents** - Verifies volume information
-5. **Government Health Warnings** - Confirms required "GOVERNMENT WARNING" text (must be ALL CAPS)
+**Analysis Checks (all case-insensitive except #5):**
+1. **Brand Name Verification** - Case-insensitive match (e.g., "STONE'S THROW" matches "Stone's Throw")
+2. **Product Class/Type** - Case-insensitive with fuzzy matching for related types (e.g., Beer/Lager Beer)
+3. **Alcohol Content Format** - Case-insensitive, checks ABV percentage display
+4. **Net Contents** - Case-insensitive, verifies volume information
+5. **Government Health Warnings** - ONLY check requiring ALL CAPS ("GOVERNMENT WARNING" exact match)
 
 **Analysis Modes:**
 
