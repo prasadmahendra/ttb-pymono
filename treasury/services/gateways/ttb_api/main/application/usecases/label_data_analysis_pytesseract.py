@@ -79,12 +79,12 @@ class LabelDataAnalysisPytesseractService:
         """
         Analyze OCR extracted text against given brand information.
 
-        Following the same logic as the LLM analysis prompt:
-        1. Brand Name - exact match (case-insensitive)
-        2. Product Class/Type - close matches allowed (Beer/Lager Beer, Gin/London Gin)
-        3. Alcohol Content - number + "%" match
-        4. Net Contents - volume match (e.g., "750 mL", "12 OZ")
-        5. Health Warning - "GOVERNMENT WARNING" must be exact ALL CAPS
+        Case sensitivity rules:
+        1. Brand Name - case-INSENSITIVE (e.g., "STONE'S THROW" matches "Stone's Throw")
+        2. Product Class/Type - case-INSENSITIVE, with fuzzy matching for related types
+        3. Alcohol Content - case-INSENSITIVE, number + "%" match
+        4. Net Contents - case-INSENSITIVE, volume match (e.g., "750 mL", "12 OZ")
+        5. Health Warning - ONLY field requiring ALL CAPS ("GOVERNMENT WARNING" exact match)
         """
         result = LabelImageAnalysisResult()
         extracted_text_lower = extracted_text.lower()
