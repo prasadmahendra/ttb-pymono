@@ -93,31 +93,36 @@ class TestLabelApprovalJobsServiceValidations(unittest.TestCase):
         """Test validation with valid JPG image"""
         valid_jpg = "data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
         # Should not raise exception
-        LabelApprovalJobsService._verify_label_image_or_raise(valid_jpg, ["jpg", "png", "gif"])
+        service = LabelApprovalJobsService()
+        service._verify_label_image_or_raise(valid_jpg, ["jpg", "png", "gif"])
 
     def test_verify_label_image_valid_png(self):
         """Test validation with valid PNG image"""
         valid_png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
         # Should not raise exception
-        LabelApprovalJobsService._verify_label_image_or_raise(valid_png, ["jpg", "png", "gif"])
+        service = LabelApprovalJobsService()
+        service._verify_label_image_or_raise(valid_png, ["jpg", "png", "gif"])
 
     def test_verify_label_image_valid_gif(self):
         """Test validation with valid GIF image"""
         valid_gif = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
         # Should not raise exception
-        LabelApprovalJobsService._verify_label_image_or_raise(valid_gif, ["jpg", "png", "gif"])
+        service = LabelApprovalJobsService()
+        service._verify_label_image_or_raise(valid_gif, ["jpg", "png", "gif"])
 
     def test_verify_label_image_empty(self):
         """Test validation with empty image"""
+        service = LabelApprovalJobsService()
         with self.assertRaises(ValueError) as context:
-            LabelApprovalJobsService._verify_label_image_or_raise("", ["jpg", "png", "gif"])
+            service._verify_label_image_or_raise("", ["jpg", "png", "gif"])
         self.assertIn("required", str(context.exception))
 
     def test_verify_label_image_invalid_type(self):
         """Test validation with invalid image type"""
         invalid_image = "data:image/bmp;base64,xyz"
+        service = LabelApprovalJobsService()
         with self.assertRaises(ValueError) as context:
-            LabelApprovalJobsService._verify_label_image_or_raise(invalid_image, ["jpg", "png", "gif"])
+            service._verify_label_image_or_raise(invalid_image, ["jpg", "png", "gif"])
         self.assertIn("following types", str(context.exception))
 
     def test_create_label_images_list_from_base64_jpg(self):

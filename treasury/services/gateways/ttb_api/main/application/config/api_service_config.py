@@ -11,6 +11,7 @@ from treasury.services.gateways.ttb_api.main.adapter.inp.gql.mutation import Mut
 from treasury.services.gateways.ttb_api.main.adapter.inp.gql.query import Query
 from treasury.services.gateways.ttb_api.main.application.config import config
 from treasury.services.gateways.ttb_api.main.application.config.config import GlobalConfig
+from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import AnalysisMode
 from treasury.services.gateways.ttb_api.main.application.usecases.security.graphql_with_security_context import \
     GraphQlWithSecurityContext
 from treasury.services.gateways.ttb_api.main.application.usecases.security.security_context_factory import \

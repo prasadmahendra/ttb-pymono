@@ -75,7 +75,7 @@ health_warning_found_results_reasoning?: string | null;
 
         warnings_were_given = given_brand_label_info.products[0].other_info.warnings is not None and len(given_brand_label_info.products[0].other_info.warnings.strip()) > 0
         if warnings_were_given:
-            warnings_prompt = "5. Health Warning Statement: For alcoholic beverages, a government warning is mandatory by law. Check that the phrase “GOVERNMENT WARNING” appears on the label image text."
+            warnings_prompt = "5. Health Warning Statement: For alcoholic beverages, a government warning is mandatory by law. Check that the phrase “GOVERNMENT WARNING” appears on the label image text and MUST BE EXACT including capitalization in all-caps GOVERNMENT WARNING"
         else:
             warnings_prompt = ""
 

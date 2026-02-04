@@ -58,7 +58,7 @@ treasury/services/gateways/ttb_api/main/
 │   └── out/                           # Output Adapters (Outbound Ports)
 │       ├── persistence/               # Database adapter
 │       ├── llm/                       # OpenAI LLM adapter
-│       └── ocr/                       # Tesseract OCR adapter (used for experimentation, not used in current version)
+│       └── ocr/                       # Tesseract OCR adapter (pytesseract analysis mode)
 │
 ├── application/                       # Application & Domain Layers
 │   ├── usecases/                      # Use Cases (Business Logic)
@@ -101,10 +101,10 @@ Exposes the application through a GraphQL API.
 - `hello()` - Health check query
 
 **Mutation Operations** (`mutations/label_approval_jobs_related.py`):
-- `create_label_approval_job(input)` - Create a new label approval job
+- `create_label_approval_job(input)` - Create a new label approval job (supports `analysis_mode` in job_metadata: `using_llm` or `pytesseract`)
 - `set_label_approval_job_status(id, status)` - Update job status (pending/approved/rejected)
 - `add_review_comment(job_id, comment)` - Add reviewer comments
-- `analyze_label_approval_job(id)` - Trigger automated label analysis
+- `analyze_label_approval_job(id, analysis_mode?)` - Trigger automated label analysis (optional `analysis_mode` override for ad-hoc runs)
 
 **Error Handling** (`error_handler.py`):
 - Custom GraphQL error handling extension
@@ -155,7 +155,7 @@ Integrates with OpenAI API for AI-powered label analysis and data extraction.
 
 **File:** `ocr/ocr_adapter.py`
 
-Uses Tesseract OCR for text extraction from images  (not used in current version. This was just me experimenting a bit).
+Uses Tesseract OCR (pytesseract) for text extraction from images. This adapter is used when the `analysis_mode` is set to `pytesseract`.
 
 **Methods:**
 - `extract_text_from_url(image_url)` - OCR from image URL
@@ -165,6 +165,8 @@ Uses Tesseract OCR for text extraction from images  (not used in current version
 - Extracted text with bounding boxes
 - Confidence scores
 - Word-level detail
+
+**Note:** Requires Tesseract to be installed on the system (`brew install tesseract` on macOS)
 
 ## Use Cases
 
@@ -197,41 +199,62 @@ Main orchestration service for managing label approval workflows.
 
 **File:** `label_data_analysis.py`
 
-Analyzes label images for regulatory compliance.
+Analyzes label images for regulatory compliance. Supports two analysis modes that can be configured per job.
 
 **Analysis Checks:**
 1. **Brand Name Verification** - Confirms brand name is visible
-2. **Product Class/Type** - Validates product classification
+2. **Product Class/Type** - Validates product classification (with fuzzy matching for related types)
 3. **Alcohol Content Format** - Checks ABV percentage display
 4. **Net Contents** - Verifies volume information
-5. **Government Health Warnings** - Confirms required warnings
+5. **Government Health Warnings** - Confirms required "GOVERNMENT WARNING" text (must be ALL CAPS)
 
 **Analysis Modes:**
-- **LLM Mode:** Uses OpenAI GPT for intelligent analysis
-- **OCR Mode:** Uses Tesseract for text-based verification (used for experimentation, not used in current version)
+
+| Mode | Value | Description |
+|------|-------|-------------|
+| **LLM (Default)** | `using_llm` | Uses OpenAI GPT for intelligent, context-aware analysis |
+| **Pytesseract** | `pytesseract` | Uses Tesseract OCR for fast, rule-based text verification |
+
+**Setting Analysis Mode:**
+- **At job creation:** Set `analysis_mode` in `job_metadata` - this value is persisted with the job
+- **Ad-hoc analysis:** Pass `analysis_mode` to `analyze_label_approval_job` mutation - this overrides the stored mode but is NOT persisted
 
 **Methods:**
-- `analyze_label_data()` - Comprehensive compliance check
-- `_analyze_with_llm()` - AI-powered analysis
-- `_analyze_with_ocr()` - OCR-based analysis (used for experimentation, not used in current version)
+- `analyze_label_data(job, analysis_mode_override)` - Comprehensive compliance check
+- `answer_analysis_questions_with_llm()` - AI-powered analysis using OpenAI
+- Delegates to `LabelDataAnalysisPytesseractService` for OCR-based analysis
 
 ### 3. LabelDataExtractionService
 
 **File:** `label_data_extraction.py`
 
-Extracts structured product information from label images using LLM.
+Extracts structured product information from label images. Supports both LLM and pytesseract extraction modes.
 
 **Extracted Data:**
 - Brand name
 - Product class and type
 - Alcohol content percentage
 - Net contents (volume)
-- Additional metadata
+- Government warnings
+- Additional metadata (bottler info, manufacturer)
+
+**Extraction Methods by Mode:**
+
+**LLM Mode (`using_llm`):**
+- Uses OpenAI GPT with vision capabilities
+- Intelligent context-aware extraction
+- Handles complex label layouts
+
+**Pytesseract Mode (`pytesseract`):**
+- Uses Tesseract OCR for text extraction
+- Pattern-based field detection using regex
+- Faster but less context-aware
 
 **Methods:**
-- `extract_label_data()` - Extract and parse product information
+- `extract_label_data(base64_image, analysis_mode)` - Extract and parse product information
+- `_extract_label_data_with_llm()` - LLM-powered extraction
+- `_extract_label_data_with_pytesseract()` - OCR-based extraction with pattern matching
 - Validates extracted data with Pydantic models
-- Handles JSON parsing and markdown code blocks
 
 ### 4. UserManagementService
 
@@ -316,13 +339,19 @@ GraphQL Response
 ### Example: Analyze Label
 
 ```
-Analyze Request
+Analyze Request (with optional analysis_mode override)
     ↓
 LabelApprovalJobsService.analyze_label_approval_job()
     ↓
+Determine analysis_mode (override > job stored mode > default)
+    ↓
+LabelDataExtractionService.extract_label_data()
+    ├── [using_llm]    → LLMAdapter.complete_prompt_with_media() → OpenAI API
+    └── [pytesseract]  → OCRAdapter.extract_text() → Tesseract OCR
+    ↓
 LabelDataAnalysisService.analyze_label_data()
-    ├──→ LLMAdapter.complete_prompt_with_media()
-    │    └──→ OpenAI API
+    ├── [using_llm]    → LLMAdapter (GPT analysis)
+    └── [pytesseract]  → Pattern matching & regex validation
     ↓
 Analysis Results (compliance checks)
     ↓
@@ -345,6 +374,7 @@ Updated Job with Analysis
 
 - **API Framework:** FastAPI/Starlette with GraphQL (Strawberry)
 - **Database:** PostgreSQL with SQLAlchemy/SQLModel ORM
-- **LLM:** OpenAI API (GPT-4o, GPT-5)
+- **LLM:** OpenAI API (GPT-4o, GPT-5) - used for `using_llm` analysis mode
+- **OCR:** Tesseract via pytesseract - used for `pytesseract` analysis mode
 - **Validation:** Pydantic
 - **Server:** Gunicorn/Uvicorn with Uvloop

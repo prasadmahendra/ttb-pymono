@@ -18,6 +18,11 @@ class LabelApprovalStatus(str, Enum):
     rejected = "rejected"
 
 
+class AnalysisMode(str, Enum):
+    using_llm = "using_llm"
+    pytesseract = "pytesseract"
+
+
 class LabelImageAnalysisResult(BaseModel):
     # Does the text on the label contain the Brand Name exactly as provided in the form?
     brand_name_found: bool = False
@@ -72,6 +77,7 @@ class JobMetadata(BaseModel):
     review_comments: Optional[list[str]] = None
     product_info: Optional[BrandDataStrict] = None
     label_images: Optional[list[LabelImage]] = None
+    analysis_mode: Optional[AnalysisMode] = AnalysisMode.using_llm
 
 
 def _serialize_job_metadata(v: JobMetadata) -> dict[str, Any]:

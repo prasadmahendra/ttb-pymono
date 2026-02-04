@@ -10,7 +10,7 @@ from treasury.services.gateways.ttb_api.main.adapter.out.persistence.label_appro
     LabelApprovalJobsPersistenceAdapter
 from treasury.services.gateways.ttb_api.main.application.config.config import GlobalConfig
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import LabelApprovalJob, \
-    JobMetadata, LabelImage
+    JobMetadata, LabelImage, AnalysisMode
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_extraction_data import BrandDataStrict, \
     ProductInfoStrict, ProductOtherInfo
 from treasury.services.gateways.ttb_api.main.application.models.domain.user import User
@@ -149,6 +149,9 @@ class LabelApprovalJobsService:
                     message="Invalid label image: " + str(ve)
                 )
 
+            # Determine analysis mode from input, default to using_llm
+            analysis_mode = input.job_metadata.analysis_mode if input.job_metadata.analysis_mode else AnalysisMode.using_llm
+
             # Convert input metadata to JobMetadata domain model
             job_metadata = JobMetadata(
                 reviewer_id=str(authenticated_user.id),
@@ -171,7 +174,8 @@ class LabelApprovalJobsService:
                         )
                     ]
                 ),
-                label_images=self._create_label_images_list_from_base64(input.job_metadata.label_image_base64)
+                label_images=self._create_label_images_list_from_base64(input.job_metadata.label_image_base64),
+                analysis_mode=analysis_mode
             )
 
             # Create the job domain object
@@ -228,6 +232,9 @@ class LabelApprovalJobsService:
     ) -> AnalyzeLabelApprovalJobResponse:
 
         job_id: uuid.UUID = input.job_id
+        # For ad-hoc runs, analysis_mode override is optional and NOT persisted
+        analysis_mode_override: Optional[AnalysisMode] = input.analysis_mode
+
         security_context = SecurityContext.from_info(info)
         authenticated_entity = security_context.get_authenticated_entity_from_security_ctx()
 
@@ -242,7 +249,10 @@ class LabelApprovalJobsService:
                 message="Failed to get label approval job"
             )
 
-        job_with_analysis: Optional[LabelApprovalJob] = self._analyze_label_images(job=job)
+        job_with_analysis: Optional[LabelApprovalJob] = self._analyze_label_images(
+            job=job,
+            analysis_mode_override=analysis_mode_override
+        )
         if job_with_analysis is not None:
             self._label_approval_jobs_persistence_adapter.set_job_metadata(
                 job_id=job.id,
@@ -256,18 +266,20 @@ class LabelApprovalJobsService:
         return AnalyzeLabelApprovalJobResponse(
             job=job_dto,
             success=True,
-            message="Label approval job created successfully"
+            message="Label approval job analyzed successfully"
         )
 
     def _analyze_label_images(
             self,
-            job: LabelApprovalJob
+            job: LabelApprovalJob,
+            analysis_mode_override: Optional[AnalysisMode] = None
     ) -> Optional[LabelApprovalJob]:
-        """Analyze label images using image recognition (stub implementation)"""
-        # In a real-world scenario, this would call an image recognition service
-        # Here we just log and return the job unchanged
-        self._logger.info(f"Analyzing label images for job id {job.id}")
-        updated_job: Optional[LabelApprovalJob] = self._label_data_analysis_service.analyze_label_data(job=job)
+        """Analyze label images using image recognition"""
+        self._logger.info(f"Analyzing label images for job id {job.id}, analysis_mode_override={analysis_mode_override}")
+        updated_job: Optional[LabelApprovalJob] = self._label_data_analysis_service.analyze_label_data(
+            job=job,
+            analysis_mode_override=analysis_mode_override
+        )
         return updated_job
 
     @classmethod
