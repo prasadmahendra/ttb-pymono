@@ -35,24 +35,36 @@ class LabelDataExtractionService:
 
     def extract_label_data(
             self,
-            base64_image: str,
+            base64_image: Optional[str] = None,
+            image_url: Optional[str] = None,
             analysis_mode: AnalysisMode = AnalysisMode.using_llm
     ) -> BrandDataStrict:
         """
         Extract label data from image using either LLM or pytesseract based on analysis_mode.
+        Accepts either base64_image (old records) or image_url (new records).
         """
         if analysis_mode == AnalysisMode.pytesseract:
-            return self._extract_label_data_with_pytesseract(base64_image)
+            return self._extract_label_data_with_pytesseract(base64_image=base64_image, image_url=image_url)
         else:
-            return self._extract_label_data_with_llm(base64_image)
+            return self._extract_label_data_with_llm(base64_image=base64_image, image_url=image_url)
 
-    def _extract_label_data_with_llm(self, base64_image: str) -> BrandDataStrict:
-        """Extract label data using LLM (OpenAI)"""
-        llm_results: str = self._llm_client.complete_prompt_with_media(
-            prompt=LlmPrompts.TTB_LABEL_IMAGE_INQUIRY_PROMPT,
-            media_base64=base64_image,
-        )
-        self._logger.info(f"extract_label_data - LLM Results for base64_image: {llm_results}")
+    def _extract_label_data_with_llm(
+            self,
+            base64_image: Optional[str] = None,
+            image_url: Optional[str] = None
+    ) -> BrandDataStrict:
+        """Extract label data using LLM (OpenAI). Accepts either base64 or URL."""
+        if image_url:
+            llm_results: str = self._llm_client.complete_prompt_with_media(
+                prompt=LlmPrompts.TTB_LABEL_IMAGE_INQUIRY_PROMPT,
+                media_url=image_url,
+            )
+        else:
+            llm_results: str = self._llm_client.complete_prompt_with_media(
+                prompt=LlmPrompts.TTB_LABEL_IMAGE_INQUIRY_PROMPT,
+                media_base64=base64_image,
+            )
+        self._logger.info(f"extract_label_data - LLM Results: {llm_results}")
 
         # Parse JSON from LLM response (may include markdown code blocks)
         json_data = self.extract_json_from_response(llm_results)
@@ -61,12 +73,20 @@ class LabelDataExtractionService:
         results = BrandDataStrict.model_validate(json_data)
         return results
 
-    def _extract_label_data_with_pytesseract(self, base64_image: str) -> BrandDataStrict:
+    def _extract_label_data_with_pytesseract(
+            self,
+            base64_image: Optional[str] = None,
+            image_url: Optional[str] = None
+    ) -> BrandDataStrict:
         """
         Extract label data using pytesseract OCR.
         Clips out substrings that match label field patterns.
+        Accepts either base64 or URL.
         """
-        ocr_result = self._ocr_adapter.extract_text(base64_encoded_image=base64_image)
+        if image_url:
+            ocr_result = self._ocr_adapter.extract_text_from_url(image_url=image_url)
+        else:
+            ocr_result = self._ocr_adapter.extract_text(base64_encoded_image=base64_image)
 
         if not ocr_result.success:
             self._logger.warning(f"OCR extraction failed: {ocr_result.error_message}")

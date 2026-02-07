@@ -36,10 +36,15 @@ class LabelDataAnalysisPytesseractService:
         given_brand_label_info = job.get_job_metadata().product_info
 
         try:
-            # Extract text from image using pytesseract
-            ocr_result: OcrResult = self._ocr_adapter.extract_text(
-                base64_encoded_image=image_to_analyze.base64
-            )
+            # Extract text from image using pytesseract — use URL for new records, base64 for old
+            if image_to_analyze.image_url and not image_to_analyze.base64:
+                ocr_result: OcrResult = self._ocr_adapter.extract_text_from_url(
+                    image_url=image_to_analyze.image_url
+                )
+            else:
+                ocr_result: OcrResult = self._ocr_adapter.extract_text(
+                    base64_encoded_image=image_to_analyze.base64
+                )
 
             if not ocr_result.success:
                 self._logger.warning(f"OCR extraction failed for job={job.id}: {ocr_result.error_message}")

@@ -8,6 +8,8 @@ from strawberry.types import Info
 
 from treasury.services.gateways.ttb_api.main.adapter.out.persistence.label_approvals_persistence_adapter import \
     LabelApprovalJobsPersistenceAdapter
+from treasury.services.gateways.ttb_api.main.adapter.out.storage.vercel_blob_storage_adapter import \
+    VercelBlobStorageAdapter
 from treasury.services.gateways.ttb_api.main.application.config.config import GlobalConfig
 from treasury.services.gateways.ttb_api.main.application.models.domain.label_approval_job import LabelApprovalJob, \
     JobMetadata, LabelImage, AnalysisMode
@@ -49,12 +51,14 @@ class LabelApprovalJobsService:
             self,
             label_approval_jobs_persistence_adapter: LabelApprovalJobsPersistenceAdapter = None,
             label_data_analysis_service: LabelDataAnalysisService = None,
-            user_management_service: UserManagementService = None
+            user_management_service: UserManagementService = None,
+            vercel_blob_storage_adapter: VercelBlobStorageAdapter = None
     ) -> None:
         self._logger = GlobalConfig.get_logger(__name__)
         self._label_approval_jobs_persistence_adapter_lazy = label_approval_jobs_persistence_adapter
         self._label_data_analysis_service_lazy = label_data_analysis_service
         self._user_management_service_lazy = user_management_service
+        self._vercel_blob_storage_adapter_lazy = vercel_blob_storage_adapter
 
     @classmethod
     def get_singleton_instance_of(cls) -> 'LabelApprovalJobsService':
@@ -80,6 +84,13 @@ class LabelApprovalJobsService:
         if self._label_approval_jobs_persistence_adapter_lazy is None:
             self._label_approval_jobs_persistence_adapter_lazy = LabelApprovalJobsPersistenceAdapter()
         return self._label_approval_jobs_persistence_adapter_lazy
+
+    @property
+    def _vercel_blob_storage_adapter(self) -> VercelBlobStorageAdapter:
+        # Lazy initialization of the Vercel Blob storage adapter
+        if self._vercel_blob_storage_adapter_lazy is None:
+            self._vercel_blob_storage_adapter_lazy = VercelBlobStorageAdapter()
+        return self._vercel_blob_storage_adapter_lazy
 
     def create_label_approval_job(
             self,
@@ -152,6 +163,9 @@ class LabelApprovalJobsService:
             # Determine analysis mode from input, default to using_llm
             analysis_mode = input.job_metadata.analysis_mode if input.job_metadata.analysis_mode else AnalysisMode.using_llm
 
+            # Upload label image to Vercel Blob Storage
+            label_images = self._upload_and_create_label_images(input.job_metadata.label_image_base64)
+
             # Convert input metadata to JobMetadata domain model
             job_metadata = JobMetadata(
                 reviewer_id=str(authenticated_user.id),
@@ -174,7 +188,7 @@ class LabelApprovalJobsService:
                         )
                     ]
                 ),
-                label_images=self._create_label_images_list_from_base64(input.job_metadata.label_image_base64),
+                label_images=label_images,
                 analysis_mode=analysis_mode
             )
 
@@ -376,31 +390,51 @@ class LabelApprovalJobsService:
             self._logger.exception(f"Error verifying label image: {str(e)}")
             raise ValueError(f"Invalid or corrupted image")
 
-    @classmethod
-    def _create_label_images_list_from_base64(cls, label_image_base64: str) -> list[LabelImage]:
-        """Create a list of label images from the base64 string"""
+    def _upload_and_create_label_images(self, label_image_base64: str) -> list[LabelImage]:
+        """Upload label image to Vercel Blob Storage and create LabelImage list with URL reference.
+        Falls back to storing base64 directly if upload fails."""
         if not label_image_base64:
             return []
 
         image_content_type = None
         if label_image_base64.startswith("data:image/jpg;base64,"):
             image_content_type = "image/jpg"
+        elif label_image_base64.startswith("data:image/jpeg;base64,"):
+            image_content_type = "image/jpeg"
         elif label_image_base64.startswith("data:image/png;base64,"):
             image_content_type = "image/png"
         elif label_image_base64.startswith("data:image/gif;base64,"):
             image_content_type = "image/gif"
 
-        # In a real-world scenario, we would handle multiple images and their metadata
-        return [LabelImage(
-            image_url=None,
-            image_content_type=image_content_type,
-            base64=label_image_base64,
-            upload_date=None,
-            approved=None,
-            approved_date=None,
-            rejected=None,
-            rejected_date=None
-        )]
+        # Determine file extension from content type
+        ext_map = {"image/jpg": "jpg", "image/jpeg": "jpg", "image/png": "png", "image/gif": "gif"}
+        extension = ext_map.get(image_content_type, "jpg")
+
+        # Decode base64 data
+        base64_data = label_image_base64.split(',', 1)[1] if ',' in label_image_base64 else label_image_base64
+        image_bytes = base64.b64decode(base64_data)
+
+        try:
+            image_url = self._vercel_blob_storage_adapter.upload_image(
+                image_data=image_bytes,
+                filename=f"label.{extension}",
+                content_type=image_content_type or "image/jpeg",
+            )
+            self._logger.info(f"Label image uploaded to Vercel Blob: {image_url}")
+
+            return [LabelImage(
+                image_url=image_url,
+                image_content_type=image_content_type,
+                base64=None,
+            )]
+        except Exception as e:
+            # Fallback: store base64 directly if blob upload fails
+            self._logger.warning(f"Vercel Blob upload failed, falling back to base64 storage: {str(e)}")
+            return [LabelImage(
+                image_url=None,
+                image_content_type=image_content_type,
+                base64=label_image_base64,
+            )]
 
     def set_label_approval_job_status(
             self,

@@ -125,50 +125,72 @@ class TestLabelApprovalJobsServiceValidations(unittest.TestCase):
             service._verify_label_image_or_raise(invalid_image, ["jpg", "png", "gif"])
         self.assertIn("following types", str(context.exception))
 
-    def test_create_label_images_list_from_base64_jpg(self):
-        """Test creating label images from base64 JPG"""
+    def test_upload_and_create_label_images_jpg_success(self):
+        """Test uploading and creating label images from base64 JPG (blob upload succeeds)"""
+        mock_blob_adapter = Mock()
+        mock_blob_adapter.upload_image.return_value = "https://blob.vercel-storage.com/label-images/test/label.jpg"
+
+        service = LabelApprovalJobsService(vercel_blob_storage_adapter=mock_blob_adapter)
         jpg_base64 = "data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-        images = LabelApprovalJobsService._create_label_images_list_from_base64(jpg_base64)
+        images = service._upload_and_create_label_images(jpg_base64)
 
         self.assertEqual(len(images), 1)
         self.assertIsInstance(images[0], LabelImage)
         self.assertEqual(images[0].image_content_type, "image/jpg")
-        self.assertEqual(images[0].base64, jpg_base64)
-        self.assertIsNone(images[0].image_url)
+        self.assertIsNone(images[0].base64)
+        self.assertEqual(images[0].image_url, "https://blob.vercel-storage.com/label-images/test/label.jpg")
+        mock_blob_adapter.upload_image.assert_called_once()
 
-    def test_create_label_images_list_from_base64_png(self):
-        """Test creating label images from base64 PNG"""
+    def test_upload_and_create_label_images_png_success(self):
+        """Test uploading and creating label images from base64 PNG"""
+        mock_blob_adapter = Mock()
+        mock_blob_adapter.upload_image.return_value = "https://blob.vercel-storage.com/label-images/test/label.png"
+
+        service = LabelApprovalJobsService(vercel_blob_storage_adapter=mock_blob_adapter)
         png_base64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-        images = LabelApprovalJobsService._create_label_images_list_from_base64(png_base64)
+        images = service._upload_and_create_label_images(png_base64)
 
         self.assertEqual(len(images), 1)
         self.assertIsInstance(images[0], LabelImage)
         self.assertEqual(images[0].image_content_type, "image/png")
-        self.assertEqual(images[0].base64, png_base64)
+        self.assertIsNone(images[0].base64)
+        self.assertIsNotNone(images[0].image_url)
 
-    def test_create_label_images_list_from_base64_gif(self):
-        """Test creating label images from base64 GIF"""
+    def test_upload_and_create_label_images_gif_success(self):
+        """Test uploading and creating label images from base64 GIF"""
+        mock_blob_adapter = Mock()
+        mock_blob_adapter.upload_image.return_value = "https://blob.vercel-storage.com/label-images/test/label.gif"
+
+        service = LabelApprovalJobsService(vercel_blob_storage_adapter=mock_blob_adapter)
         gif_base64 = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-        images = LabelApprovalJobsService._create_label_images_list_from_base64(gif_base64)
+        images = service._upload_and_create_label_images(gif_base64)
 
         self.assertEqual(len(images), 1)
         self.assertIsInstance(images[0], LabelImage)
         self.assertEqual(images[0].image_content_type, "image/gif")
-        self.assertEqual(images[0].base64, gif_base64)
+        self.assertIsNone(images[0].base64)
+        self.assertIsNotNone(images[0].image_url)
 
-    def test_create_label_images_list_from_base64_empty(self):
+    def test_upload_and_create_label_images_empty(self):
         """Test creating label images from empty string"""
-        images = LabelApprovalJobsService._create_label_images_list_from_base64("")
+        service = LabelApprovalJobsService()
+        images = service._upload_and_create_label_images("")
 
         self.assertEqual(len(images), 0)
 
-    def test_create_label_images_list_from_base64_unknown_type(self):
-        """Test creating label images from unknown type"""
-        unknown_base64 = "data:image/webp;base64,xyz"
-        images = LabelApprovalJobsService._create_label_images_list_from_base64(unknown_base64)
+    def test_upload_and_create_label_images_fallback_on_upload_failure(self):
+        """Test fallback to base64 storage when blob upload fails"""
+        mock_blob_adapter = Mock()
+        mock_blob_adapter.upload_image.side_effect = RuntimeError("Upload failed")
+
+        service = LabelApprovalJobsService(vercel_blob_storage_adapter=mock_blob_adapter)
+        jpg_base64 = "data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        images = service._upload_and_create_label_images(jpg_base64)
 
         self.assertEqual(len(images), 1)
-        self.assertIsNone(images[0].image_content_type)
+        self.assertIsNone(images[0].image_url)
+        self.assertEqual(images[0].base64, jpg_base64)
+        self.assertEqual(images[0].image_content_type, "image/jpg")
 
 
 class TestLabelApprovalJobsServiceCreateJob(unittest.TestCase):

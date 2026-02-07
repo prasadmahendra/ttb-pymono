@@ -62,6 +62,7 @@ class LabelDataAnalysisService:
             image_to_analyze = job_meta.label_images[0]
             extracted_label_data: BrandDataStrict = self._label_data_extraction_service.extract_label_data(
                 base64_image=image_to_analyze.base64,
+                image_url=image_to_analyze.image_url,
                 analysis_mode=analysis_mode
             )
 

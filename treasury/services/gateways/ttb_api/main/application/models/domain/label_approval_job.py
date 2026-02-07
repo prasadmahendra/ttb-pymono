@@ -52,14 +52,13 @@ class LabelImageAnalysisResult(BaseModel):
 
 
 class LabelImage(BaseModel):
+    # New records: image uploaded to Vercel Blob Storage, image_url is set, base64 is None.
+    # Old records: base64 is set, image_url is None — analysis services check both.
     image_url: Optional[str] = None
     image_content_type: Optional[str] = None
 
-    # For the purpose of this coding test, we include base64 representation of the image
-    # and keep these in our memory based SQL model.
-    # In a real-world scenario, this will not be practical for large images, and at scale,
-    # we would store images in a dedicated object storage service (e.g., AWS S3) and only
-    # keep the URL/reference here.
+    # Kept for backward compatibility with old records that stored base64 directly.
+    # New records will have base64=None and image_url set instead.
     base64: Optional[str] = None
     upload_date: Optional[datetime] = None
     approved: Optional[bool] = None
